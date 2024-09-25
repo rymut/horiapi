@@ -7,7 +7,7 @@ static hori_device_config_t hori_known_devices[] = {
         // pc mode
         "Hori_SPF023",
         HORI_PRODUCT_SPF_023,
-        HORI_MODE_XINPUT,
+        HORI_CONTROLLER_XINPUT,
         // device
         0x0164,
         // config
@@ -23,7 +23,7 @@ static hori_device_config_t hori_known_devices[] = {
         // ps4 mode
         "Hori_SPF023",
         HORI_PRODUCT_SPF_023,
-        HORI_MODE_PS4,
+        HORI_CONTROLLER_PLAYSTATION4,
         // device
         0x0162,
         // config
@@ -38,7 +38,7 @@ static hori_device_config_t hori_known_devices[] = {
     {	// ps5 mode
         "Hori_SPF023",
         HORI_PRODUCT_SPF_023,
-        HORI_MODE_PS5,
+        HORI_CONTROLLER_PLAYSTATION5,
         // device
         0x0163,
         // config
@@ -53,9 +53,10 @@ static hori_device_config_t hori_known_devices[] = {
 };
 
 static const hori_context_t hori_default_context = {
-    hori_known_devices,
-    2000,
-    20,
+    .devices = hori_known_devices,
+    .rediscover_miliseconds_timeout = 2000,
+    .rediscover_miliseconds_delay = 10,
+    .read_timeout_ms = 20,
 };
 
 hori_context_t* hori_context() {

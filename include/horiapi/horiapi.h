@@ -48,18 +48,19 @@ extern "C" {
         HORI_STATE_NORMAL = 2
     };
 
-    enum hori_config_mode {
-        HORI_MODE_HID,			// configuration option			
-        HORI_MODE_XINPUT,		// windows mode
-        HORI_MODE_PS4,	// playstation 4 mode
-        HORI_MODE_PS5,	// playstation 5 mode
+    /** @brief Controller support */
+    enum hori_controller {
+        HORI_CONTROLLER_HID = 0,			// configuration option			
+        HORI_CONTROLLER_XINPUT,		// windows mode
+        HORI_CONTROLLER_PLAYSTATION4,	// playstation 4 mode
+        HORI_CONTROLLER_PLAYSTATION5,	// playstation 5 mode
     };
-    typedef enum hori_config_mode hori_config_mode_t;
 
     struct hori_device_firmware_config {
         void* data;
     };
     typedef struct hori_device_firmware_config hori_device_firmware_config_t;
+
     /**
      * @brief Device config - used to describe supported devices
      */
@@ -68,7 +69,7 @@ extern "C" {
         char firmware_name[16];
         hori_product_t product : 8; // 4
         // normal mode hid vid/pid
-        hori_config_mode_t device_config_mode : 8; //4
+        enum hori_controller device_config_mode : 8; //4
 
         // unsigned short hid_vendor_id; // always 0xF04; ?
         unsigned short hid_normal_product_id;
@@ -88,12 +89,15 @@ extern "C" {
     };
     typedef struct hori_device_config hori_device_config_t;
 
-    /**
-     * @brief Root context settings
-     */
+    /** @brief Context settings */
     struct hori_context {
+        /** @brief supported device list or null */
         hori_device_config_t* devices;
+        /** @brief timeout between rediscover */
         int rediscover_miliseconds_timeout;
+        int rediscover_miliseconds_delay;
+        /** @brief read timeout */
+        int read_timeout_ms;
     };
     typedef struct hori_context hori_context_t;
 
@@ -176,13 +180,15 @@ extern "C" {
      */
     int hori_read_firmware_version(hori_device_t* device, char* version, int version_size);
 
-    /**
-     * @brief hid close device
-     */
-    int hori_close(hori_device_t* device);
+    /** @brief Close HORI device
 
-    /**
-     * @brief Get device state
+        @ingroup API
+        @since 0.1.0
+        @param device The handle returned from @see hori_open
+    */
+    void HORI_API_CALL hori_close(hori_device_t* device);
+
+    /** @brief Get HORI device state
      */
     int hori_get_state(hori_device_t* device);
     /**
@@ -190,8 +196,18 @@ extern "C" {
      */
     int hori_set_state(hori_device_t* device, int state);
 
-    void horiapi_xinput_reset(const char* path);
     hori_device_config_t* hori_get_device_config(hori_device_t* device);
+
+    /** @brief Get current device mode
+
+        @ingroup API
+        @since 0.1.0
+        @param device A handle returned from @see hori_open
+
+        @returns
+            This function returns device mode @see hori_mode and -1 on error
+     */
+    int hori_get_mode(hori_device_t* device);
 
     int hori_profile_enter(hori_device_t*, int profile);
     int hori_profile_exit(hori_device_t*);
@@ -203,10 +219,12 @@ extern "C" {
 
 
     // retrive hori vendor ID
+    /** @brief Get HORI vendor id
+        @returns
+            This function returns @see HORI_HID_VENDOR_ID
+     */
     unsigned short hori_vendor_id();
 
-    // retrive all hori product hids
-    unsigned short* hori_product_ids();
 
     struct hori_api_version {
         int major;
@@ -215,6 +233,7 @@ extern "C" {
     };
 
     struct hori_api_version* hori_version();
+
     const char* hori_version_str();
 
 #ifdef __cplusplus

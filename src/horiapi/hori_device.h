@@ -16,6 +16,8 @@ extern "C" {
         hori_device_platform_data_t* platform_data;
         /**
          * @brief Firmware version read from device
+         *
+         * Released each time when MODE changes from/to CONFIG
          */
         char* firmware_version;
         /**

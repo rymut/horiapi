@@ -476,7 +476,7 @@ BOOL query_controller(const wchar_t* path) {
     return TRUE;
 }
 
-BOOL set_rumble(HANDLE handle, uint16_t low, uint16_t high)
+int set_rumble(HANDLE handle, uint16_t low, uint16_t high)
 {
     if (handle == INVALID_HANDLE_VALUE) {
         return FALSE;
@@ -487,22 +487,29 @@ BOOL set_rumble(HANDLE handle, uint16_t low, uint16_t high)
         //if (!DeviceIoControl(handle, 0x8000a010, rumble_packet, sizeof(rumble_packet), NULL, 0, NULL, NULL))
     {
         // NOTE: could check GetLastError() here, if it is ERROR_DEVICE_NOT_CONNECTED - that means disconnect
-        return FALSE;
+        return -1;
     }
-    return TRUE;
+    return 0;
 }
 
-BOOL set_rumble_sequence(const wchar_t* path) {
+int set_rumble_sequence(const wchar_t* path) {
     DWORD delay = 5, time = 15;
     DWORD sleep[] = { delay, time, delay, time, delay, time, delay, time, delay };
     WORD values[] = { 0, 13311, 0, 6655, 0, 13311, 0, 32767, 0 };
     const size_t steps = sizeof(sleep) / sizeof(DWORD);
     HANDLE handle = OpenDeviceInterface(path, FALSE);
+    if (handle == INVALID_HANDLE_VALUE) {
+        return -1;
+    }
     for (size_t i = 0; i < steps; ++i) {
-        set_rumble(handle, values[i], values[i]);
+        if (-1 == set_rumble(handle, values[i], values[i])) {
+            CloseHandle(handle);
+            return -1;
+        }
         Sleep(sleep[i]);
     }
     CloseHandle(handle);
+    return 0;
 }
 
 
@@ -548,11 +555,11 @@ wchar_t* hori_internal_hid_location_path(const char* hid_path, wchar_t** device_
         return NULL;
     }
     const GUID XnaComposite = { 0xd61ca365, 0x5af4, 0x4486, { 0x99, 0x8b, 0x9d, 0xb4, 0x73, 0x4c, 0x6c, 0xa3} };
-    for (DEVINST devParent = devNode, devChild = NULL; devParent != devChild; devChild = devParent, CM_Get_Parent(&devParent, devChild, 0))
+    for (DEVINST devParent = devNode, devChild = 0; devParent != devChild; devChild = devParent, CM_Get_Parent(&devParent, devChild, 0))
     {
         const wchar_t prefix[] = L"\\Device\\USBPDO-";
         sizeof(prefix) / sizeof(wchar_t);
-        wchar_t* pdoName = hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_PDOName);
+        wchar_t* pdoName = (wchar_t*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_PDOName);
         if (pdoName == NULL) {
             continue;
         }
@@ -564,7 +571,7 @@ wchar_t* hori_internal_hid_location_path(const char* hid_path, wchar_t** device_
         free(pdoName);
         pdoName = NULL;
 
-        GUID* classGuid = hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_ClassGuid);
+        GUID* classGuid = (GUID*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_ClassGuid);
         if (classGuid == NULL) {
             continue;
         }
@@ -574,11 +581,11 @@ wchar_t* hori_internal_hid_location_path(const char* hid_path, wchar_t** device_
         }
         free(classGuid);
 
-        const wchar_t* locationPaths = hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_LocationPaths);
+        wchar_t* locationPaths = (wchar_t*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_LocationPaths);
         if (locationPaths) {
             if (device_instance != NULL) {
                 free(*device_instance);
-                *device_instance = hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_InstanceId);
+                *device_instance = (wchar_t*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_InstanceId);
             }
             return locationPaths;
         }
@@ -590,28 +597,7 @@ hori_device_t* hori_open(hori_product_t product, int index, hori_context_t* cont
     hori_enumeration_t* devs = hori_enumerate(product, context);
 
     hori_free_enumerate(devs);
-}
-
-enum hori_mode2 {
-    HORI_MODE_ERROR = -1,
-    HORI_MODE_NONE = 0,
-    HORI_MODE_NORMAL = 1,
-    HORI_MODE_CONFIG = 2,
-};
-
-int hori_get_mode(hori_device_t* device) {
-    hori_device_config_t* dev_config = hori_device_config(device);
-    struct hid_device_info* hid_dev_info = hid_get_device_info(device->gamepad);
-    if (hid_dev_info == NULL || dev_config == NULL) {
-        return HORI_MODE_NONE;
-    }
-    if (hid_dev_info->product_id == dev_config->hid_config_product_id) {
-        return HORI_MODE_CONFIG;
-    }
-    if (hid_dev_info->product_id == dev_config->hid_normal_product_id) {
-        return HORI_MODE_NORMAL;
-    }
-    return HORI_MODE_NONE;
+    return NULL;
 }
 
 void hori_internal_hid_close(hori_device_t* device) {
@@ -661,6 +647,7 @@ int hori_set_state(hori_device_t* device, int state) {
     device->gamepad = NULL;
     hid_close(device->control);
     device->control = NULL;
+    // rediscover timeout
     for (int i = 0; i < 1000; i++) {
         if (-1 != hori_internal_open(device, product_id, usage_page_gamepad, usage_page_control)) {
             hori_send_heartbeat(device);
@@ -787,125 +774,6 @@ hori_device_t* hori_open_path(char* path, hori_context_t* context) {
         hori_close(device);
     }
     return device;
-}
-
-int hori_close(hori_device_t* device) {
-    if (device) {
-        free(device);
-    }
-}
-
-void horiapi_xinput_reset(const char* _path) {
-    char* path = NULL;
-
-    LPWSTR parentPath = NULL;
-    const GUID xboxGuid = { 0x745A17A0UL, 0x74D3U, 0x11D0U, { 0xB6U, 0xFEU, 0x00U, 0xA0U, 0xC9U, 0x0FU, 0x57U, 0xDAU} };
-    GUID hidGuid;
-    HidD_GetHidGuid(&hidGuid);
-    uint16_t vid_normal = 0x0F0Du;
-    uint16_t pid_normal = 0x164u;
-    uint16_t vid_config = 0x0F0Du, pid_config = 0x021Au;
-    struct hid_device_info* devs = hid_enumerate(vid_normal, pid_normal);
-    if (devs == NULL) {
-        printf("no devices");
-        return;
-    }
-    for (struct hid_device_info* dev = devs; dev != NULL; dev = dev->next) {
-        free(path);
-        path = strdup(dev->path);
-    }
-    hid_free_enumeration(devs);
-    // get parrent node
-    // this is name of device AKA DEVICE ID
-    DEVINST current = 0;
-    wchar_t* locationPath = hori_internal_hid_location_path(path, &current);
-    if (current != 0) {
-        /*
-        parentPath = get_device_interface_property_string(path, &DEVPKEY_Device_InstanceId);
-        free(path);
-        path = NULL;
-        if (parentPath == NULL) {
-            return;
-        }
-        DEVINST devNode = 0;
-        if (CR_SUCCESS == CM_Locate_DevNodeW(&devNode, (DEVINSTID_W)parentPath, CM_LOCATE_DEVNODE_NORMAL)) {
-            DEVINST current = devNode;
-            wchar_t* locationPath = NULL;
-            while (current != 0) {
-                locationPath = hori_internal_getDeviceInstanceProperty(current, &DEVPKEY_Device_LocationPaths);
-                wchar_t* hardwareIds = hori_internal_getDeviceInstanceProperty(current, &DEVPKEY_Device_HardwareIds);
-                GUID* guid = hori_internal_getDeviceInstanceProperty(current, &DEVPKEY_Device_ClassGuid);
-                if (locationPath != NULL) {
-                    break;
-                }
-                if (CR_SUCCESS != CM_Get_Parent(&current, current, 0)) {
-                    break;
-                }
-            }
-        */
-        if (locationPath) {
-            GUID xbox_guid = { 0xec87f1e3, 0xc13b, 0x4100, { 0xb5, 0xf7, 0x8b, 0x84, 0xd5, 0x42, 0x60, 0xcb } };
-            wchar_t* list = NULL;
-            ULONG len = 0;
-            GetDevInstInterfaces(current, &xbox_guid, &list, &len);
-            query_controller(list);
-            set_rumble_sequence(list);
-            char* new_path = NULL;
-            // start enumeration
-            for (clock_t prev = clock(), now = prev; difftime(prev, now) / CLOCKS_PER_SEC * 1000 < 1000 && new_path == NULL; Sleep(1), now = clock()) {
-                double value = difftime(now, prev) / CLOCKS_PER_SEC;
-
-                printf("%lf s\n", value);
-                struct hid_device_info* devs = hid_enumerate(vid_config, pid_config);
-                for (struct hid_device_info* dev = devs; dev != NULL; dev = dev->next) {
-                    // check if path match
-                    if (dev->usage_page != 0xFFF0) {
-                        continue;
-                    }
-                    wchar_t* path = hori_internal_hid_location_path(dev->path, NULL);
-                    if (path == NULL) {
-                        continue;
-                    }
-                    int result = wcscmp(path, locationPath);
-                    free(path);
-                    if (result == 0) {
-                        new_path = strdup(dev->path);
-                        break;
-                    }
-                }
-                hid_free_enumeration(devs);
-            }
-            if (new_path != NULL) {
-                hid_device* dev = hid_open_path(new_path);
-                if (dev) {
-                    hid_write(dev, hori_internal_heartbeat_command, sizeof(hori_internal_heartbeat_command));
-                    // delay is about 2 seconds if not hearbeat than pad will disconnect automatically
-                    for (clock_t prev = clock(), now = prev; difftime(prev, now) / CLOCKS_PER_SEC < 600; Sleep(2000 / 2.0), now = clock()) {
-                        if (-1 == hid_write(dev, hori_internal_heartbeat_command, sizeof(hori_internal_heartbeat_command))) {
-                            printf("delay %lf \n", difftime(now, prev) / CLOCKS_PER_SEC);
-                            break;
-                        }
-                    }
-                }
-                hid_close(dev);
-                printf("NEW PATH FOUND %s\n", new_path);
-            }
-        }
-        //GUID guid = get_device_instance_property_guid(devNode, &DEVPKEY_Device_ClassGuid);
-        printf("dev nod found - here we have devNode\n");
-        free(parentPath);
-        return;
-    }
-    free(parentPath);
-    // have dev node
-
-
-//    CM_Get_DevNode_PropertyW(devNode, DEVPKEY_Device_PhysicalDeviceLocation)
- //       auto classGuid = map_prop_guid(parentPath, &DEVPKEY_DeviceInterface_ClassGuid);
-    //wprintf(L"%d) %x %ls\n", i, 0,
-     //   deviceInterfaceDetailData->DevicePath);
-    //    wprintf(L"\tGUID: %X %X %X %X\n", classGuid.Data1, classGuid.Data2, classGuid.Data3, *((LONG*)classGuid.Data4));
-
 }
 
 hori_device_platform_data_t* hori_internal_platform_data(hori_device_config_t* device_config, char* path) {
