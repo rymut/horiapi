@@ -55,6 +55,7 @@ static hori_device_config_t hori_known_devices[] = {
 static const hori_context_t hori_default_context = {
     hori_known_devices,
     2000,
+    20,
 };
 
 hori_context_t* hori_context() {

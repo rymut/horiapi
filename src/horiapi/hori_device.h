@@ -11,8 +11,8 @@ extern "C" {
 
     struct hori_device {
         hori_context_t* context;
-        struct hid_device* gamepad;
-        struct hid_device* control;
+        hid_device* gamepad;
+        hid_device* control;
         hori_device_platform_data_t* platform_data;
         /**
          * @brief Firmware version read from device
@@ -23,6 +23,16 @@ extern "C" {
          */
         char* profiles;
     };
+
+    /**
+     @brief Write data to control interface
+     */
+    int hori_internal_write_control(hori_device_t* device, uint8_t* data, int size);
+    /**
+     @brief Read data from control interface
+     */
+    int hori_internal_read_control(hori_device_t* device, uint8_t* data, int size);
+
 #if defined(__cplusplus)
-    }
+}
 #endif 

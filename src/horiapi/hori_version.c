@@ -13,8 +13,5 @@ const struct hori_api_version* HORI_API_CALL hid_version(void)
 
 const char* HORI_API_CALL hid_version_str(void)
 {
-    return HID_API_VERSION_STR;
+    return HORI_API_VERSION_STR;
 }
-
-
-
