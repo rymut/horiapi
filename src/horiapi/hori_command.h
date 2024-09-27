@@ -34,6 +34,22 @@ extern "C" {
     int hori_internal_send_command_exit_profile(hori_device_t* device);
     int hori_internal_send_command_enter_profile(hori_device_t* device);
 
+    /** @brief Parse unsigned number
+
+        @summary
+            Number can be left padded by 0, or both side padded by whitespaces
+
+        @since 0.1.0
+        @param data[in] the array containing value to parse
+        @param data_size[in] number of bytes to parse
+
+        @returns
+            This function returns parsed value or -1 when data contains
+            other characters than digits (padded with whitespace and \0)
+      */
+    int hori_internal_parse_version_number(char const* data, int data_size);
+
+
     int hori_internal_get_firmware_version_str_size(const uint8_t* data, int data_size);
     /** @brief Parse firmware version
 
@@ -60,7 +76,8 @@ extern "C" {
             The function return -1 on error or if version_str_size cannot hold version data,
             otherwise returns number of bytes written in version_str_size
      */
-    int hori_internal_parse_firmware_version_str(char const* data, int data_size, char* version_str, int version_str_size);
+    int hori_internal_parse_firmware_version_str(const uint8_t* data, int data_size, char* version_str, int version_str_size);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
