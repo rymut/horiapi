@@ -614,49 +614,6 @@ int hori_internal_leave_config(hori_device_t* device) {
     return 0;
 }
 
-int hori_set_state(hori_device_t* device, int state) {
-    if (device == NULL) {
-        return HORI_STATE_NONE;
-    }
-    int current = hori_get_state(device);
-    if (current == state) {
-        return state;
-    }
-    hori_device_config_t* device_config = hori_get_device_config(device);
-    unsigned short product_id = 0;
-    unsigned short usage_page_gamepad = 0;
-    unsigned short usage_page_control = 0;
-    if (device_config == NULL) {
-        return HORI_STATE_NONE;
-    }
-    if (current == HORI_STATE_CONFIG) {
-        hori_internal_leave_config(device);
-        product_id = device_config->hid_normal_product_id;
-        usage_page_gamepad = device_config->hid_normal_usage_page_gamepad;
-        usage_page_control = device_config->hid_normal_usage_page_control;
-    }
-    if (current == HORI_STATE_NORMAL) {
-        if (-1 == hori_internal_send_enter_config(device)) {
-            return current;
-        }
-        product_id = device_config->hid_config_product_id;
-        usage_page_gamepad = device_config->hid_config_usage_page_gamepad;
-        usage_page_control = device_config->hid_config_usage_page_profile;
-    }
-    hid_close(device->gamepad);
-    device->gamepad = NULL;
-    hid_close(device->control);
-    device->control = NULL;
-    // rediscover timeout
-    for (int i = 0; i < 1000; i++) {
-        if (-1 != hori_internal_open(device, product_id, usage_page_gamepad, usage_page_control)) {
-            hori_send_heartbeat(device);
-            return state;
-        }
-        Sleep(1);
-    }
-    return HORI_STATE_NONE;
-}
 
 int hori_internal_open(hori_device_t* device, unsigned short product_id, unsigned short usage_page_gamepad, unsigned short usage_page_control) {
     if (device == NULL) {
@@ -709,27 +666,6 @@ hori_device_config_t* hori_get_device_config(hori_device_t* device) {
         return NULL;
     }
     return hori_internal_find_device_config(device->context->devices, hid_get_device_info(device->gamepad));
-}
-
-int hori_get_state(hori_device_t* device) {
-    if (device == NULL) {
-        return HORI_STATE_NONE;
-    }
-    if (device->gamepad == NULL) {
-        return HORI_STATE_NONE;
-    }
-    struct hid_device_info* dev_info = hid_get_device_info(device->gamepad);
-    hori_device_config_t* device_config = hori_internal_find_device_config(device->context->devices, dev_info);
-    if (device_config == NULL) {
-        return HORI_STATE_NONE;
-    }
-    if (device_config->hid_normal_product_id == dev_info->product_id) {
-        return HORI_STATE_NORMAL;
-    }
-    if (device_config->hid_config_product_id == dev_info->product_id) {
-        return HORI_STATE_CONFIG;
-    }
-    return HORI_STATE_NONE;
 }
 
 hori_device_t* hori_open_path(char* path, hori_context_t* context) {

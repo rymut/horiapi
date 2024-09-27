@@ -56,6 +56,9 @@ class HoriApiConan(ConanFile):
             pass
         return None
 
+    def requirements(self):
+        self.test_requires("cmocka/1.1.7")
+
     def configure(self):
         if self.settings.os == "Windows":
             del self.options.fPIC
@@ -67,3 +70,9 @@ class HoriApiConan(ConanFile):
         tc = CMakeToolchain(self)
         tc.generate()
 
+    def build(self):
+        if not self.conf.get("tools.build:skip_test", default=False):
+            test_folder = os.path.join("tests")
+            if self.settings.os == "Windows":
+                test_folder = os.path.join("tests", str(self.settings.build_type))
+            self.run(os.path.join(test_folder, "test_hello"))

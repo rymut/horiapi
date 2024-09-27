@@ -34,6 +34,33 @@ extern "C" {
     int hori_internal_send_command_exit_profile(hori_device_t* device);
     int hori_internal_send_command_enter_profile(hori_device_t* device);
 
+    int hori_internal_get_firmware_version_str_size(const uint8_t* data, int data_size);
+    /** @brief Parse firmware version
+
+        @since 0.1.0
+        @param data[in] The multibyte (UTF-8) string, can handle missing \0 at the end
+        @param size[in] The length of @p data
+        @param version[out] The pointer to firmware version structure, can be null
+
+        @returns
+            The function returns number of bytes form data used to parse firmware version,
+            or -1 on error or invalid field value.
+    */
+    int hori_internal_parse_firmware_version(uint8_t const* data, int size, struct hori_firmware_version* version);
+
+    /** @brief Parse firmware virsion string
+
+        @since 0.1.0
+        @param data[in] The multibyte (UTF-8) string
+        @param data_size[in] The length of @p data
+        @param version_str[out] The version string can be NULL
+        @param version_str_size[in] The length of version string - must be 0 when @p version_str is NULL
+
+        @returns
+            The function return -1 on error or if version_str_size cannot hold version data,
+            otherwise returns number of bytes written in version_str_size
+     */
+    int hori_internal_parse_firmware_version_str(char const* data, int data_size, char* version_str, int version_str_size);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

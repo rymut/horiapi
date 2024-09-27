@@ -19,7 +19,8 @@ extern "C" {
          *
          * Released each time when MODE changes from/to CONFIG
          */
-        char* firmware_version;
+        char* firmware_version_str;
+        struct hori_firmware_version* firmware_version;
         /**
          * @brief profile data
          */

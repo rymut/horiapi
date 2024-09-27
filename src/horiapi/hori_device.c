@@ -37,3 +37,7 @@ void HORI_API_CALL hori_close(hori_device_t* device) {
         free(device);
     }
 }
+
+unsigned short HORI_API_CALL hori_vendor_id() {
+    return HORI_HID_VENDOR_ID;
+}

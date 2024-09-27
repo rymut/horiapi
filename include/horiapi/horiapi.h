@@ -3,27 +3,29 @@
 #include <inttypes.h>
 
 #define HORI_API_CALL 
+
 #define HORI_API_VERSION_MAJOR 0
 #define HORI_API_VERSION_MINOR 1
 #define HORI_API_VERSION_PATCH 0
-#define HORI_API_VERSION_STR ""
+
 #define HORI_HID_VENDOR_ID 0x0F0D
 
-/** @brief Coverts a version as Major/Minor/Patch into a number:
-    <4 bits syntax changes><8 bit major><12 bit minor><8 bit patch>.
+/** @brief Generate compile-time version number of HORI API library
+
+    @summary Encoded as <4 bits syntax changes><8 bit major><12 bit minor><8 bit patch>.
 
     @since 0.1.0
 
-    Convenient function to be used for compile-time checks, like:
+    Can be used to compile-time check library version:
     @code{.c}
-    #if HORI_API_VERSION >= HORI_API_MAKE_VERSION(0, 12, 0)
+    #if HORI_API_VERSION >= HORI_API_MAKE_VERSION(0, 1, 0)
     @endcode
 
     @ingroup API
 */
 #define HORI_API_MAKE_VERSION(mj, mn, p) (((mj) << 20) | ((mn & 0xFFF) << 8) | (p))
 
-/** @brief Static/compile-time version of the library.
+/** @brief Complie time version number
 
     @since 0.1.0
 
@@ -32,6 +34,19 @@
     @ingroup API
 */
 #define HORI_API_VERSION HORI_API_MAKE_VERSION(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
+
+/* Helper macros */
+#define HORI_API_AS_STR_IMPL(x) #x
+#define HORI_API_AS_STR(x) HORI_API_AS_STR_IMPL(x)
+#define HORI_API_TO_VERSION_STR(v1, v2, v3) HORI_API_AS_STR(v1.v2.v3)
+
+/** @brief Compile-time c-string version of the library.
+
+    @summary Stored as "<major>.<minor>.<patch>"
+
+    @ingroup API
+*/
+#define HORI_API_VERSION_STR HORI_API_TO_VERSION_STR(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
 
 #ifdef __cplusplus
 extern "C" {
@@ -54,6 +69,18 @@ extern "C" {
         HORI_CONTROLLER_XINPUT,		// windows mode
         HORI_CONTROLLER_PLAYSTATION4,	// playstation 4 mode
         HORI_CONTROLLER_PLAYSTATION5,	// playstation 5 mode
+    };
+
+    struct hori_software_version {
+        int major;
+        int minor;
+        int patch;
+    };
+
+    struct hori_firmware_version {
+        // hardware version
+        int hardware_revision;
+        struct hori_software_version software_version;
     };
 
     struct hori_device_firmware_config {
@@ -107,17 +134,8 @@ extern "C" {
     typedef struct hori_device hori_device_t;
 
 
-    struct hori_device_path {
-        char* device;
-        char* gamepad;
-        char* config;
-    };
-    typedef struct hori_device_path hori_device_path_t;
-
     struct hori_device_info {
         hori_device_config_t* device_config;
-        wchar_t* serial_number;
-        hori_device_path_t device_path;
         struct hori_device_info* next;
     };
     typedef struct hori_device_info hori_device_info_t;
@@ -132,7 +150,6 @@ extern "C" {
     typedef struct hori_buttons hori_buttons_t;
     typedef struct hori_profile hori_profile_t;
     typedef struct hori_gamepad hori_gamepad_t;
-    typedef struct hori_version hori_version_t;
 
 
 
@@ -172,8 +189,20 @@ extern "C" {
      */
     int hori_send_heartbeat(hori_device_t* device);
 
-    /**
-     * @brief return firmware version in format
+    /** @brief Get firmware version
+
+        @since 0.1.0
+
+        @returns
+            This function returns string representing firmware version or NULL or error
+
+     */
+    const char* HORI_API_CALL hori_get_firmware_version_str(hori_device_t *device);
+
+
+    const struct hori_firmware_version* HORI_API_CALL hori_get_firmware_version(hori_device_t *device);
+
+    /** @brief return firmware version in format
      * @param version - at max 60 characters long
      * @param version_size buffer size
      * int return length of version
@@ -189,8 +218,15 @@ extern "C" {
     void HORI_API_CALL hori_close(hori_device_t* device);
 
     /** @brief Get HORI device state
+
+        @since 0.1.0
+        @param device The handle returned from @see hori_open
+
+        @returns
+            This function return @see hori_state or -1 on error
      */
-    int hori_get_state(hori_device_t* device);
+    int HORI_API_CALL hori_get_state(hori_device_t* device);
+
     /**
      * @brief get device state
      */
@@ -215,26 +251,38 @@ extern "C" {
     int hori_profile_get(hori_device_t*, hori_profile_t*);
     int hori_profile_set(hori_device_t*, hori_profile_t*);
     int hori_gamepad_get(hori_device_t*, hori_gamepad_t*);
-    int hori_version_get(hori_device_t*, hori_version_t*);
 
-
-    // retrive hori vendor ID
     /** @brief Get HORI vendor id
+
         @returns
             This function returns @see HORI_HID_VENDOR_ID
      */
-    unsigned short hori_vendor_id();
+    unsigned short HORI_API_CALL hori_vendor_id();
 
 
-    struct hori_api_version {
-        int major;
-        int minor;
-        int patch;
-    };
+    /** @brief Get runtime hori api version
 
-    struct hori_api_version* hori_version();
+        @since 0.1.0
 
-    const char* hori_version_str();
+        @returns
+            Internal structure containing version number
+
+        @note
+            This memory should not by released by the user
+      */
+    const struct hori_software_version* HORI_API_CALL hori_version();
+
+    /** @brief Get runtime hori api version as c-style string
+
+        @since 0.1.0
+
+        @returns
+            String represetation of version number
+
+        @note
+            This memory should not be released by the user
+      */
+    const char* HORI_API_CALL hori_version_str();
 
 #ifdef __cplusplus
 } // extern "C" 

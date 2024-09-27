@@ -16,7 +16,7 @@ if(NOT EXISTS "${CONAN_PROVIDER}")
 endif()
 
 # configure options
-option(HORIAPI_BUILD_TESTS "Build horiapi tests" OFF)
+option(HORIAPI_BUILD_TESTS "Build horiapi tests" ON)
 option(HORIAPI_BUILD_EXAMPLES "Build horiapi examples" OFF)
 option(HORIAPI_BUILD_SHARED_LIBS "Build horiapi as shared library" OFF)
 
@@ -40,12 +40,14 @@ target_sources(${PROJECT_NAME}
         "src/horiapi/hori_device_win32.h"
         "src/horiapi/hori_endian.h"
         "src/horiapi/hori_profile.h"
+        "src/horiapi/hori_state.c"
+        "src/horiapi/hori_time.h"
         "src/horiapi/hori_version.c"
         "src/horiapi/horiapi.c"
         "src/horiapi/horiapi_reset_xinput.c"
         "src/hori/main.c"
 )
-target_include_directories(${PROJECT_NAME} PUBLIC "include" PRIVATE "include/horiapi")
+target_include_directories(${PROJECT_NAME} PUBLIC "include" "src/horiapi" PRIVATE "include/horiapi")
 target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidapi)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER $<TARGET_PROPERTY:${PROJECT_NAME},INTERFACE_SOURCES>)
 

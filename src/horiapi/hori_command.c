@@ -2,7 +2,9 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 #include <inttypes.h>
+#include <ctype.h>
 
 #include "hori_device.h"
 
@@ -59,43 +61,186 @@ int hori_internal_send_heartbeat(hori_device_t* device)
     return hori_internal_write_control(device, hori_internal_heartbeat, sizeof(hori_internal_heartbeat));
 }
 
-/**
- @brief
-
- @param data - string text (might not end with \0)
- @param size - data size
-
- @return string containing version number or NULL if data does not contain valid version number
- */
-char* hori_internal_parse_firmware_version(uint8_t* data, int size) {
-    if (data == NULL || size <= 0) {
-        return NULL;
+int hori_internal_parse_version_number(char const* data, int data_size) {
+    if (data == NULL || data_size < 0) {
+        return -1;
     }
-    // allocade maximum size
-    char* version_str = (char*)calloc((size_t)size + 1, sizeof(char));
-    if (version_str == NULL) {
-        return NULL;
+    int result = 0;
+    size_t index = 0;
+    for (index = 0; index < data_size && isspace(data[index]) != 0; ++index);
+    if (index >= data_size) {
+        return -1;
+    }
+    for (; index < data_size && isdigit(data[index]) != 0 && index < data_size; ++index) {
+        result = result * 10 + (data[index] - '0');
+    }
+    for (; index < data_size && isspace(data[index]) != 0; ++index);
+    if (index < data_size && data[index] != 0) {
+        return -1;
+    }
+    return result;
+}
+
+int hori_internal_parse_firmware_version(uint8_t const* data, int data_size, struct hori_firmware_version* version) {
+    if (data == NULL || data_size <= 0) {
+        return -1;
     }
 
     int position = 0;
-    char* str = version_str;
-    for (int length = strnlen(data, size); length != 0; position++, data += length, length = strnlen(data, size)) {
-        if (version_str == str && position == 0 && length == 1 && data[0] == '0') {
-            continue;
+    int numbers[4] = { -1, -1, 0, 0 };
+    char const* strings = data;
+    int strings_size = data_size;
+    for (size_t length = strnlen(strings, strings_size);
+        length != 0 && position < 4;
+        position++, length = strnlen(strings, strings_size < 0 ? 0 : strings_size)) {
+        int value = hori_internal_parse_version_number(strings, length);
+        if (value == -1) {
+            if (position < 2) {
+                return -1;
+            }
+            break;
         }
-        if (version_str != str) {
-            *str = (position < 4) ? '.' : '-';
-            str += 1;
-        }
-        memcpy(str, data, length);
-        str += length;
+        numbers[position] = value;
+        strings += length + 1;
+        strings_size -= length + 1;
     }
 
-    if (str != version_str) {
-        return version_str;
+    if (numbers[1] == -1) {
+        return -1;
     }
-    free(version_str);
-    return NULL;
+    if (version) {
+        version->hardware_revision = numbers[0];
+        version->software_version.major = numbers[1];
+        version->software_version.minor = numbers[2];
+        version->software_version.patch = numbers[3];
+    }
+    return strings_size <= 0 ? data_size : data_size - strings_size;
+}
+
+/** @brief Check if firmware version payload is valid
+
+    @param data The payload of firmware version ack
+    @since 0.1.0
+
+    @returns
+        Length of firmware version payload (always less than @p data_size),
+        -1 if payload is not valid
+
+    @note
+        data is valid if it consists at least of 4 strings
+        - number only positive
+        - number - can contain leading zeros
+        - number
+        - number
+        - any string ... repated
+ */
+
+#define HORI_VERSION_STR_REVISION_PREFIX "(rev "
+#define HORI_VERSION_STR_REVISION_SUFFIX ")"
+#define HORI_VERSION_STR_DIGITS_SEPARATOR "."
+#define HORI_VERSION_STR_TEXT_SEPARATOR " "
+
+int hori_internal_get_firmware_version_str_size(const uint8_t* data, int data_size) {
+    if (data == NULL || data_size <= 0) {
+        return -1;
+    }
+
+    int strings_count = 0, required_size = 0;
+    const char* strings = data;
+    int strings_size = data_size;
+    int rev_digits = 0;
+    for (size_t length = strnlen(strings, strings_size); length != 0; strings_count++, strings += length + 1, strings_size -= length + 1, length = strnlen(strings, strings_size < 0 ? 0 : strings_size)) {
+        size_t not_zero = length + 1;
+        if (strings_count < 4) {
+            for (size_t i = 0; i < length; ++i) {
+                if (isdigit(strings[i]) == 0) {
+                    return -1;
+                }
+                if (not_zero > i && strings[i] != '0') {
+                    not_zero = i;
+                }
+            }
+        }
+        if (strings_count == 0) {
+            continue;
+        }
+        else {
+            rev_digits = length - not_zero;
+        }
+
+        if (required_size != 0) {
+            if (strings_count < 4) {
+                required_size += strlen(HORI_VERSION_STR_DIGITS_SEPARATOR);
+            }
+            else {
+                required_size += strlen(HORI_VERSION_STR_TEXT_SEPARATOR);
+            }
+        }
+        // add '.' or '+' / '-' depend on the position
+        if (strings_count < 4) {
+            if (not_zero > length) {
+                // only 0
+            }
+            else {
+                required_size += length - not_zero;
+            }
+
+            if (strings_count == 3 && rev_digits > 0) {
+                required_size += rev_digits + 7;
+            }
+        }
+        else {
+            required_size += length;
+        }
+    }
+
+    if (required_size > 0) {
+        required_size += 1; // \0
+    }
+    return required_size;
+}
+
+int hori_internal_parse_firmware_version_str(const uint8_t* data, int data_size, char* version, int version_size) {
+    if (data == NULL || data_size <= 0) {
+        return -1;
+    }
+
+    int strings_count = 0, required_size = 0;
+    const char* strings = data;
+    int strings_size = data_size;
+    /*
+        for (size_t length = strnlen(data, strings_size); length != 0; strings_count++, strings += length + 1, strings_size -= length + 1, length = strnlen(strings, strings_size < 0 ? 0 : strings_size)) {
+            if (required_size == 0 && strings_count == 0 && length == 1 && strings[0] == '0') {
+                continue;
+            }
+
+            if (version_str != str) {
+                *str = (position < 4) ? '.' : '-';
+                str += 1;
+            }
+            memcpy(str, data, length);
+            str += length;
+        }
+
+        char* str = version_str;
+        for (size_t length = strnlen(data, data_size); length != 0; position++, data += length + 1, data_size -= length + 1, length = strnlen(data, data_size < 0 ? 0 : data_size)) {
+            if (version_str == str && position == 0 && length == 1 && data[0] == '0') {
+                continue;
+            }
+            if (version_str != str) {
+                *str = (position < 4) ? '.' : '-';
+                str += 1;
+            }
+            memcpy(str, data, length);
+            str += length;
+        }
+
+        if (str != version_str) {
+            return version_str;
+        }
+        free(version_str);
+        */
+    return -1;
 }
 
 int hori_internal_read_firmware_version(hori_device_t* device) {
@@ -112,11 +257,11 @@ int hori_internal_read_firmware_version(hori_device_t* device) {
     if (payload_size == -1) {
         return -1;
     }
-    free(device->firmware_version);
-    device->firmware_version = hori_internal_parse_firmware_version(response + HORI_INTERNAL_PACKET_HEADER_SIZE, payload_size);
+    free(device->firmware_version_str);
+    //device->firmware_version_str = hori_internal_parse_firmware_version_str(response + HORI_INTERNAL_PACKET_HEADER_SIZE, payload_size);
     if (device->firmware_version == NULL) {
         return -1;
     }
-    return strlen(device->firmware_version);
+    return strlen(device->firmware_version_str);
 }
 
