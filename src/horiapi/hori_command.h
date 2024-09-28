@@ -44,8 +44,9 @@ extern "C" {
         @param data_size[in] number of bytes to parse
 
         @returns
-            This function returns parsed value or -1 when data contains
-            other characters than digits (padded with whitespace and \0)
+            This function returns parsed value or -1 when invalid arguments are passed or
+            data contains other characters than digits (padded with whitespace and \0) or not
+            data_size characters were parsed.
       */
     int hori_internal_parse_version_number(char const* data, int data_size);
 

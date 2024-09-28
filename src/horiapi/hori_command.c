@@ -66,7 +66,7 @@ int hori_internal_parse_version_number(char const* data, int data_size) {
     if (data == NULL || data_size < 0) {
         return -1;
     }
-    int result = 0;
+    unsigned int result = 0;
     size_t index = 0;
     for (index = 0; index < data_size && isspace(data[index]) != 0; ++index);
     if (index >= data_size) {
@@ -74,12 +74,16 @@ int hori_internal_parse_version_number(char const* data, int data_size) {
     }
     for (; index < data_size && isdigit(data[index]) != 0 && index < data_size; ++index) {
         result = result * 10 + (data[index] - '0');
+        if (result > INT_MAX) {
+            return -1;
+        }
     }
     for (; index < data_size && isspace(data[index]) != 0; ++index);
-    if (index + 1 < data_size || (index + 1 == data_size && data[index] != 0)) {
+    for (; index < data_size && data[index] == 0; ++index);
+    if (index < data_size) {
         return -1;
     }
-    return result;
+    return (int)result;
 }
 
 int hori_internal_parse_firmware_version(uint8_t const* data, int data_size, struct hori_firmware_version* version) {
