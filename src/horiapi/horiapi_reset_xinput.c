@@ -29,58 +29,6 @@ static uint8_t hori_internal_get_firmware_command[] = { 15, 0, 0, 60, 9 };
 
 static uint8_t hori_internal_heartbeat_command[] = { 15, 170, 85, 90, 165 };
 
-int hori_read_firmware_version(hori_device_t* device, char* out, int version_size) {
-    if (device == NULL || device->control == NULL) {
-        return -1;
-    }
-
-    if (-1 == hid_write(device->control, hori_internal_get_firmware_command, sizeof(hori_internal_get_firmware_command))) {
-        return -1;
-    }
-    if (-1 == hid_write(device->control, hori_internal_heartbeat_command, sizeof(hori_internal_heartbeat_command))) {
-        return -1;
-    }
-
-    uint8_t buffer[65];
-    memset(buffer, 0, sizeof(buffer));
-    int read = hid_read_timeout(device->control, buffer, sizeof(buffer) - 1, 25);
-    if (read == -1) {
-        return -1;
-    }
-    if (buffer[4] != 10) // ack
-    {
-        return -1;
-    }
-    int size = 0;
-    char version[64];
-    memset(version, 0, sizeof(version));
-    char* offset = version;
-    uint8_t* ptr = buffer + 5;
-    for (int p = 0, len = strlen(ptr); len != 0; ptr = ptr + len + 1, p++, len = strlen(ptr)) {
-        if (size == 0 && p == 0) {
-            if (len == 1 && ptr[0] == '0') {
-                continue;
-            }
-        }
-        if (offset != version) {
-            *offset = (p < 4) ? '.' : '-';
-            offset += 1;
-        }
-        memcpy(offset, ptr, len);
-        offset = offset + len;
-        
-    }
-
-    size = offset != version ? offset - version + 1: 0;
-    if (version_size == 0) {
-        return size;
-    }
-    if (version_size < size || out == NULL) {
-        return -1;
-    }
-    memcpy(out, version, size);
-    return size;
-}
 /**
      * @brief Write heartbeat to device
      * @param[in] device - device to write heartbeat

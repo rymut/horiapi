@@ -33,12 +33,12 @@ int main() {
                 printf("cannot send heartbeat\n");
                 break;
             }
-            int len = hori_read_firmware_version(driver, NULL, 0);
-            if (-1 == len) {
+            const char *version_str = hori_get_firmware_version_str(driver);
+            if (version_str == NULL) {
                 printf("cannot get firmware\n");
                 break;
             }
-            printf("len %d\n", len);
+            printf("firmware version: %s\n", version_str);
             Sleep(1000);
         }
     }

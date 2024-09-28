@@ -5,6 +5,7 @@
 #define HORI_INTERNAL_REQUEST_SIZE 64
 #define HORI_INTERNAL_RESPONSE_SIZE 64
 
+// size with command_id
 #define HORI_INTERNAL_PACKET_HEADER_SIZE 5
 
 #ifdef __cplusplus
@@ -78,6 +79,16 @@ extern "C" {
             otherwise returns number of bytes written in version_str_size
      */
     int hori_internal_parse_firmware_version_str(const uint8_t* data, int data_size, char* version_str, int version_str_size);
+
+    /** @brief Read firmware version from device
+
+        @since 0.1.0
+        @param data[in|out] device from which read the version and store values
+
+        @return
+            This function returns -1 on error or zero value on success
+     */
+    int hori_internal_read_firmware_version(hori_device_t* device);
 
 #ifdef __cplusplus
 }

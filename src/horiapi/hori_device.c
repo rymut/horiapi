@@ -1,4 +1,5 @@
 #include "hori_device.h"
+#include "hori_command.h"
 
 int hori_internal_write_control(hori_device_t* device, uint8_t* data, int size) {
     if (device == NULL) {
@@ -40,4 +41,38 @@ void HORI_API_CALL hori_close(hori_device_t* device) {
 
 unsigned short HORI_API_CALL hori_vendor_id() {
     return HORI_HID_VENDOR_ID;
+}
+
+const char* HORI_API_CALL hori_get_firmware_version_str(hori_device_t* device) {
+    if (device == NULL) {
+        return NULL;
+    }
+    int state = hori_get_state(device);
+    if (state != HORI_STATE_CONFIG) {
+        return NULL;
+    }
+    if (device->firmware_version_str != NULL && device->firmware_version_str[0] != 0) {
+        return device->firmware_version_str;
+    }
+    if (-1 == hori_internal_read_firmware_version(device)) {
+        return NULL;
+    }
+    return device->firmware_version_str;
+}
+
+const struct hori_firmware_version* HORI_API_CALL hori_get_firmware_version(hori_device_t* device) {
+    if (device == NULL) {
+        return NULL;
+    }
+    int state = hori_get_state(device);
+    if (state != HORI_STATE_CONFIG) {
+        return NULL;
+    }
+    if (device->firmware_version != NULL && device->firmware_version->hardware_revision >= 0) {
+        return device->firmware_version;
+    }
+    if (-1 == hori_internal_read_firmware_version(device)) {
+        return NULL;
+    }
+    return device->firmware_version;
 }

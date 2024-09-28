@@ -9,27 +9,38 @@
 
 #include "hori_device.h"
 
+/** @brief get command payload offset for valid command buffer
 
-static int hori_internal_has_valid_command_response(uint8_t* buffer, int size, int command_id) {
-    if (buffer == NULL) {
+    @since 0.1.0
+    @param data[in] The array containing command response/request
+    @param size[in] The size of the @p data parameter
+    @param command_id[in] - command to get payload offset
+
+    @returns
+        The function returns -1 if @data does not contain valid @p command_id buffer,
+        or offset to command payload, always less or equal to @p size
+        (in case when command does not hold any payload)
+ */
+static int hori_internal_get_command_payload_offset(uint8_t const* data, int size, int command_id) {
+    if (data == NULL) {
         return -1;
     }
     if (size < HORI_INTERNAL_PACKET_HEADER_SIZE) {
         return -1;
     }
-    if (buffer[0] != HORI_REPORT_ID_PROFILE_RESPONSE) {
+    if (data[0] != HORI_REPORT_ID_PROFILE_RESPONSE) {
         return -1;
     }
-    if (buffer[1] != 0 || buffer[2] != 0) {
+    if (data[1] != 0 || data[2] != 0) {
         return -1;
     }
-    if (buffer[3] > size - HORI_INTERNAL_PACKET_HEADER_SIZE) {
+    if (data[3] > size - (HORI_INTERNAL_PACKET_HEADER_SIZE - 1)) {
         return -1;
     }
-    if (buffer[4] != (uint8_t)command_id) {
+    if (data[4] != (uint8_t)command_id) {
         return -1;
     }
-    return size - HORI_INTERNAL_PACKET_HEADER_SIZE;
+    return HORI_INTERNAL_PACKET_HEADER_SIZE;
 }
 
 static int hori_internal_send_command(hori_device_t* device, int command_id) {
@@ -247,15 +258,38 @@ int hori_internal_read_firmware_version(hori_device_t* device) {
     }
     uint8_t response[HORI_INTERNAL_RESPONSE_SIZE];
     int response_size = hori_internal_read_control(device, response, HORI_INTERNAL_RESPONSE_SIZE);
-    int payload_size = hori_internal_has_valid_command_response(response, response_size, HORI_COMMAND_ID_READ_FIRMWARE_VERSION_ACK);
-    if (payload_size == -1) {
+    int payload_offset = hori_internal_get_command_payload_offset(response, response_size, HORI_COMMAND_ID_READ_FIRMWARE_VERSION_ACK);
+    if (payload_offset == -1) {
         return -1;
     }
+    uint8_t* payload = response + payload_offset;
+    int payload_size = response_size - payload_offset;
+    int version_str_size = hori_internal_get_firmware_version_str_size(payload, payload_size);
+    if (version_str_size == -1) {
+        return -1;
+    }
+    char* version_str = (char*)calloc(version_str_size, sizeof(char));
+    struct hori_firmware_version* version = (struct hori_firmware_version*)calloc(1, sizeof(struct hori_firmware_version));
+    if (version_str == NULL || version == NULL) {
+        free(version_str);
+        free(version);
+        return -1;
+    }
+    if (-1 == hori_internal_parse_firmware_version_str(payload, payload_size, version_str, version_str_size)) {
+        free(version_str);
+        free(version);
+        return -1;
+    }
+    if (-1 == hori_internal_parse_firmware_version(payload, payload_size, version)) {
+        free(version_str);
+        free(version);
+        return -1;
+    }
+    
     free(device->firmware_version_str);
-    //device->firmware_version_str = hori_internal_parse_firmware_version_str(response + HORI_INTERNAL_PACKET_HEADER_SIZE, payload_size);
-    if (device->firmware_version == NULL) {
-        return -1;
-    }
-    return strlen(device->firmware_version_str);
+    device->firmware_version_str = version_str;
+    free(device->firmware_version);
+    device->firmware_version = version;
+    return 1;
 }
 
