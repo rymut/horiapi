@@ -9,10 +9,6 @@
 #include "../src/horiapi/hori_command.h"
 
 /* A test case that does nothing and succeeds. */
-static void null_test_success(void** state) {
-    (void)state; /* unused */
-}
-
 
 struct test_data_firmware_version {
     struct hori_firmware_version version;
