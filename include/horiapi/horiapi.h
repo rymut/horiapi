@@ -8,6 +8,7 @@
 #define HORI_API_VERSION_MINOR 1
 #define HORI_API_VERSION_PATCH 0
 
+/** @brief Compile-time HORI vendor id */
 #define HORI_HID_VENDOR_ID 0x0F0D
 
 /** @brief Generate compile-time version number of HORI API library
@@ -36,9 +37,11 @@
 #define HORI_API_VERSION HORI_API_MAKE_VERSION(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
 
 /* Helper macros */
+#if !defined(HORI_DOXYGEN)
 #define HORI_API_AS_STR_IMPL(x) #x
 #define HORI_API_AS_STR(x) HORI_API_AS_STR_IMPL(x)
 #define HORI_API_TO_VERSION_STR(v1, v2, v3) HORI_API_AS_STR(v1.v2.v3)
+#endif // !defined(HORI_DOXYGEN)
 
 /** @brief Compile-time c-string version of the library.
 
@@ -71,15 +74,29 @@ extern "C" {
         HORI_CONTROLLER_PLAYSTATION5,	// playstation 5 mode
     };
 
+    /** @brief Structure describe software semver
+
+        @ingroup API
+        @since 0.1.0
+     */
     struct hori_software_version {
+        /** @brief Major version */
         int major;
+        /** @brief Minor version */
         int minor;
+        /** @brief Patch version */
         int patch;
     };
 
+    /** @brief Structure describe firmware version
+
+        @ingroup API
+        @since 0.1.0
+     */
     struct hori_firmware_version {
-        // hardware version
+        /** @brief Hardware revision 0 for first revision */
         int hardware_revision;
+        /** @brief Software version */
         struct hori_software_version software_version;
     };
 
@@ -88,40 +105,42 @@ extern "C" {
     };
     typedef struct hori_device_firmware_config hori_device_firmware_config_t;
 
-    /**
-     * @brief Device config - used to describe supported devices
+    /** @brief Structure used to describe supported devices
+
+        @ingroup API
+        @since 0.1.0
      */
     struct hori_device_config {
-        // must match firmware name
+        /** @brief Firmware name (in firmware) */
         char firmware_name[16];
-        hori_product_t product : 8; // 4
-        // normal mode hid vid/pid
-        enum hori_controller device_config_mode : 8; //4
-
-        // unsigned short hid_vendor_id; // always 0xF04; ?
+        /** @brief Product type */
+        hori_product_t product : 8;
+        /** @brief Device config mode or auto */
+        enum hori_controller device_config_mode : 8;
+        /** @brief Normal mode HID device product id */
         unsigned short hid_normal_product_id;
-        /**
-         * @brief Product ID for config mode, 0 if unsupported
-         */
+        /** @brief Config mode HID device product id */
         unsigned short hid_config_product_id;
-        /**
-         * @brief Gamepad usage page
-         */
-        unsigned short hid_normal_usage_page_gamepad; // gamepad usage page
-        unsigned short hid_normal_usage_page_control;   // 0 - entry not supporeted (or Xinput)
+        /** @brief Normal operation gamepad HID usage page */
+        unsigned short hid_normal_usage_page_gamepad;
+        /** @brief Normal operation control HID usage page */
+        unsigned short hid_normal_usage_page_control;
+        /** @brief Config operation gamepad HID usage page */
         unsigned short hid_config_usage_page_gamepad;
+        /** @brief Config operation profile HID usage page */
         unsigned short hid_config_usage_page_profile;
-
+        /** @brief Next device config structure */
         struct hori_device_config* next;
     };
     typedef struct hori_device_config hori_device_config_t;
 
     /** @brief Context settings */
     struct hori_context {
-        /** @brief supported device list or null */
+        /** @brief supported device list or NULL */
         hori_device_config_t* devices;
-        /** @brief timeout between rediscover */
+        /** @brief timeout between device rediscover */
         int rediscover_miliseconds_timeout;
+        /** @brief delay between rediscover attempts */
         int rediscover_miliseconds_delay;
         /** @brief read timeout */
         int read_timeout_ms;
@@ -132,7 +151,6 @@ extern "C" {
 
     // forward delcarations
     typedef struct hori_device hori_device_t;
-
 
     struct hori_device_info {
         hori_device_config_t* device_config;
@@ -147,67 +165,78 @@ extern "C" {
     };
     typedef struct hori_enumeration hori_enumeration_t;
 
-    typedef struct hori_buttons hori_buttons_t;
-    typedef struct hori_profile hori_profile_t;
-    typedef struct hori_gamepad hori_gamepad_t;
-
-
-
     // set custom device config
     // get defalut context
     hori_context_t* hori_context();
 
+    /** @brief Enumerate available HORI devices
+
+        @ingroup API
+        @since 0.1.0
+        @param product The product type to enumerate
+        @param context The context used to enumerate devices
+
+        @returns
+            This function returns NULL if no device is found or pointer to first item
+     */
     hori_enumeration_t* hori_enumerate(hori_product_t product, hori_context_t* context);
-    void hori_free_enumerate(hori_enumeration_t* e);
 
-    /**
-     * @brief Open hori device using product and index (current order of listed devices)
-     * @param product[in] product to open
-     * @param index[in] index of the product used when multiple devices are found
-     * @param context[in] context to open
+    /** @brief Free enumeration
+
+        @param enumeration The enumeration handle returned by @see hori_enumerate
+      */
+    void hori_free_enumerate(hori_enumeration_t* enumeration);
+
+    /** @brief Open hori device using device path
+
+        @ingroup API
+        @since 0.1.0
+        @param path Device path
+        @param context Device context or NULL
+
+        @returns
+            This function returns device handle or NULL if device cannot be open
      */
-    hori_device_t* hori_open(hori_product_t product, int index, hori_context_t* context);
+    hori_device_t* hori_open_path(char* path, hori_context_t* context);
 
-    /**
-     * @brief open index
-     */
-    hori_device_t* hori_open_index(int index, hori_context_t* context);
+    /** @brief Send heartbeat to device
 
-    /**
-     * @brief Open path (using any rest is constructed
-     */
-    hori_device_t* hori_open_path(char* any_path, hori_context_t* context);
+        @ingroup API
+        @since 0.1.0
 
-    /**
-     * @brief Open device using info structure
-     */
-    hori_device_t* hori_open_info(hori_device_info_t* info, hori_context_t* context);
+        @param[in] device - device to write heartbeat
 
-    /**
-     * @brief Write heartbeat to device
-     * @param[in] device - device to write heartbeat
+        @returns
+            This function returns
      */
     int hori_send_heartbeat(hori_device_t* device);
 
     /** @brief Get firmware version
 
+        @ingroup API
         @since 0.1.0
 
         @returns
             This function returns string representing firmware version or NULL or error
 
+        @note
+            Memory should not be released by the user.
+            When device in sot in HORI_MODE_CONFIG will return NULL.
      */
-    const char* HORI_API_CALL hori_get_firmware_version_str(hori_device_t *device);
+    const char* HORI_API_CALL hori_get_firmware_version_str(hori_device_t* device);
 
+    /** @brief Return device firmware version
 
-    const struct hori_firmware_version* HORI_API_CALL hori_get_firmware_version(hori_device_t *device);
+        @param device The device which version need to be read
 
-    /** @brief return firmware version in format
-     * @param version - at max 60 characters long
-     * @param version_size buffer size
-     * int return length of version
+        @returns
+            The function returns firmware version or NULL on error or when device is not in HORI_MODE_CONFIG
+
+        @note
+            Memory should not be released by the user.
+            When device is not in HORI_MODE_CONFIG will return NULL
      */
-    int hori_read_firmware_version(hori_device_t* device, char* version, int version_size);
+    struct hori_firmware_version const* HORI_API_CALL hori_get_firmware_version(hori_device_t* device);
 
     /** @brief Close HORI device
 
@@ -219,6 +248,7 @@ extern "C" {
 
     /** @brief Get HORI device state
 
+        @ingroup API
         @since 0.1.0
         @param device The handle returned from @see hori_open
 
@@ -227,41 +257,41 @@ extern "C" {
      */
     int HORI_API_CALL hori_get_state(hori_device_t* device);
 
-    /**
-     * @brief get device state
-     */
-    int hori_set_state(hori_device_t* device, int state);
-
-    hori_device_config_t* hori_get_device_config(hori_device_t* device);
-
-    /** @brief Get current device mode
+    /** @brief get device state
 
         @ingroup API
         @since 0.1.0
-        @param device A handle returned from @see hori_open
+        @param device The handle returned from @see hori_open
 
         @returns
-            This function returns device mode @see hori_mode and -1 on error
+            This function returns @see hori_state on -1 on error
      */
-    int hori_get_mode(hori_device_t* device);
+    int HORI_API_CALL hori_set_state(hori_device_t* device, int state);
 
-    int hori_profile_enter(hori_device_t*, int profile);
-    int hori_profile_exit(hori_device_t*);
-    int hori_profile_switch(hori_device_t*, int profile);
-    int hori_profile_get(hori_device_t*, hori_profile_t*);
-    int hori_profile_set(hori_device_t*, hori_profile_t*);
-    int hori_gamepad_get(hori_device_t*, hori_gamepad_t*);
+    /** @brief Get HORI device config (context based)
 
-    /** @brief Get HORI vendor id
+        @ingroup API
+        @since 0.1.0
+        @param device[in] The device which config to retrive
+
+        @returns
+            The functions returns pointer to device config or NULL on error
+     */
+    hori_device_config_t* HORI_API_CALL hori_get_device_config(hori_device_t* device);
+
+    /** @brief Get HORI Vendor Id
+
+        @ingroup API
+        @since 0.1.0
 
         @returns
             This function returns @see HORI_HID_VENDOR_ID
      */
     unsigned short HORI_API_CALL hori_vendor_id();
 
-
     /** @brief Get runtime hori api version
 
+        @ingroup API
         @since 0.1.0
 
         @returns
@@ -274,6 +304,7 @@ extern "C" {
 
     /** @brief Get runtime hori api version as c-style string
 
+        @ingroup API
         @since 0.1.0
 
         @returns
@@ -283,6 +314,29 @@ extern "C" {
             This memory should not be released by the user
       */
     const char* HORI_API_CALL hori_version_str();
+
+    int hori_profile_enter(hori_device_t*, int profile);
+    int hori_profile_exit(hori_device_t*);
+    int hori_profile_switch(hori_device_t*, int profile);
+    typedef struct hori_buttons hori_buttons_t;
+    typedef struct hori_profile hori_profile_t;
+    typedef struct hori_gamepad hori_gamepad_t;
+
+    int hori_profile_get(hori_device_t*, hori_profile_t*);
+    int hori_profile_set(hori_device_t*, hori_profile_t*);
+    int hori_gamepad_get(hori_device_t*, hori_gamepad_t*);
+    /**
+     * @brief Open hori device using product and index (current order of listed devices)
+     * @param product[in] product to open
+     * @param index[in] index of the product used when multiple devices are found
+     * @param context[in] context to open
+     */
+    hori_device_t* hori_open(hori_product_t product, int index, hori_context_t* context);
+
+    /**
+     * @brief open index
+     */
+    hori_device_t* hori_open_index(int index, hori_context_t* context);
 
 #ifdef __cplusplus
 } // extern "C" 
