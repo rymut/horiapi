@@ -14,3 +14,4 @@ struct CMUnitTestGroup {
 };
 
 const struct CMUnitTestGroup* hori_intrenal_parse_firmware_version_tests();
+const struct CMUnitTestGroup* hori_intrenal_parse_version_number_tests();
