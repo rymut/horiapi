@@ -54,24 +54,133 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+    /** Hori products
+
+        @since 0.1.0
+      */
     enum hori_product {
         HORI_PRODUCT_ANY = 0, // hori device but might be unsupported
+        HORI_PRODUCT_SPF_021,
+        HORI_PRODUCT_SPF_004,
+        HORI_PRODUCT_SPF_022,
         HORI_PRODUCT_SPF_023,
+        HORI_PRODUCT_NSW326,
+        HORI_PRODUCT_SD2112,
+        HORI_PRODUCT_SD2113,
+        HORI_PRODUCT_SD2115,
+        HORI_PRODUCT_HPC043_WHEEL,
+        HORI_PRODUCT_HPC043_PANEL,
+        HORI_PRODUCT_PC2161
+
     };
     typedef enum hori_product hori_product_t;
 
+    /** Hori controller state
+
+        @ingroup API
+        @since 0.1.0
+     */
     enum hori_state {
         HORI_STATE_NONE = -1,
         HORI_STATE_CONFIG = 1,
         HORI_STATE_NORMAL = 2
     };
 
-    /** @brief Controller support */
+    /** @brief Controller support
+
+        @ingroup API
+        @since 0.1.0
+      */
     enum hori_controller {
         HORI_CONTROLLER_HID = 0,			// configuration option			
         HORI_CONTROLLER_XINPUT,		// windows mode
         HORI_CONTROLLER_PLAYSTATION4,	// playstation 4 mode
         HORI_CONTROLLER_PLAYSTATION5,	// playstation 5 mode
+    };
+
+    /** @brief Controller features
+
+        @ingroup API
+        @since 0.1.0
+      */
+    enum hori_feature {
+        /** @brief Controller supports mapping */
+        HORI_FEATURE_MAPPING = 1,
+        /** @brief Controller supports motor */
+        HORI_FEATURE_MOTOR = 2,
+        /** @brief Controller supports sensors */
+        HORI_FEATURE_SENSOR = 4,
+        /** @brief Controller supports wheel */
+        HORI_FEATURE_PEDALS = 8,
+        /** @brief Controller supports left stick */
+        HORI_FEATURE_LEFT_STICK = 16,
+        /** @brief Controller supports right stick */
+        HORI_FEATURE_RIGHT_STICK = 32,
+    };
+
+    /** @brief Hori stick definitions
+
+        @ingroup API
+        @since 0.1.0
+      */
+    enum hori_stick {
+        HORI_STICK_LEFT = 1,
+        HORI_STICK_RIGHT = 2,
+        HORI_STICK_WHEEL = 3
+    };
+
+    /** @brief Hori turbo setting */
+    enum hori_turbo {
+        HORI_TURBO_NONE = 0,
+    };
+
+    /** @brief Hori button used for mapping */
+    enum hori_button {
+        HORI_BUTTON_UP = 1,
+        HORI_BUTTON_DOWN = 2,
+        HORI_BUTTON_LEFT = 3,
+        HORI_BUTTON_RIGHT = 4,
+
+        HORI_BUTTON_L1 = 5,
+        HORI_BUTTON_R1 = 6,
+        HORI_BUTTON_L3 = 7,
+        HORI_BUTTON_R3 = 8,
+
+        HORI_BUTTON_FL1 = 9,
+        HORI_BUTTON_FL2 = 10,
+        HORI_BUTTON_FR1 = 11,
+        HORI_BUTTON_FR2 = 12,
+
+        HORI_BUTTON_L2 = 13,
+        HORI_BUTTON_R2 = 14,
+
+        HORI_BUTTON_CROSS = 15,
+        HORI_BUTTON_CIRCLE = 16,
+        HORI_BUTTON_SQUARE = 17,
+        HORI_BUTTON_TRIANGLE = 18,
+
+        HORI_BUTTON_LPEDAL = 19,
+        HORI_BUTTON_RPEDAL = 20,
+
+        HORI_BUTTON_PLAYSTATION = 21,
+        HORI_BUTTON_SELECT = 22,
+        HORI_BUTTON_START = 23,
+        HORI_BUTTON_CAMERA = 24,
+
+        HORI_BUTTON_LSTICK_UP = 25,
+        HORI_BUTTON_LSTICK_DOWN = 26,
+        HORI_BUTTON_LSTICK_LEFT = 27,
+        HORI_BUTTON_LSTICK_RIGHT = 28,
+
+        HORI_BUTTON_RSTICK_UP = 29,
+        HORI_BUTTON_RSTICK_DOWN = 30,
+        HORI_BUTTON_RSTICK_LEFT = 31,
+        HORI_BUTTON_RSTICK_RIGHT = 32,
+
+        HORI_BUTTON_LAGILE = 33,
+        HORI_BUTTON_LTARGET = 34,
+
+        HORI_BUTTON_DISABLED = 255
     };
 
     /** @brief Structure describe software semver
@@ -315,16 +424,6 @@ extern "C" {
       */
     const char* HORI_API_CALL hori_version_str();
 
-    int hori_profile_enter(hori_device_t*, int profile);
-    int hori_profile_exit(hori_device_t*);
-    int hori_profile_switch(hori_device_t*, int profile);
-    typedef struct hori_buttons hori_buttons_t;
-    typedef struct hori_profile hori_profile_t;
-    typedef struct hori_gamepad hori_gamepad_t;
-
-    int hori_profile_get(hori_device_t*, hori_profile_t*);
-    int hori_profile_set(hori_device_t*, hori_profile_t*);
-    int hori_gamepad_get(hori_device_t*, hori_gamepad_t*);
     /**
      * @brief Open hori device using product and index (current order of listed devices)
      * @param product[in] product to open
