@@ -13,6 +13,7 @@ extern "C" {
 #endif // __cplusplus
     enum hori_report_id {
         HORI_REPORT_ID_PROFILE_REQUEST = 15,
+        // this depends on controller
         HORI_REPORT_ID_PROFILE_RESPONSE = 16,
     };
 
@@ -21,7 +22,7 @@ extern "C" {
         HORI_COMMAND_ID_EXIT_PROFILE = 2,
         HORI_COMMAND_ID_WRITE_PROFILE = 3,
         HORI_COMMAND_ID_READ_PROFILE = 4,
-        HORI_COMMAND_ID_PROFILE_ACK = 5,
+        HORI_COMMAND_ID_READ_PROFILE_ACK = 5,
         HORI_COMMAND_ID_ACK = 6,
         HORI_COMMAND_ID_SWITCH_PROFILE = 7,
         HORI_COMMAND_ID_PROFILE_SAVE = 8, /// store to eprom _EEPROM
@@ -83,56 +84,34 @@ extern "C" {
     /** @brief Read firmware version from device
 
         @since 0.1.0
-        @param data[in|out] device from which read the version and store values
+        @param device[in|out] device from which read the version and store values
 
         @return
             This function returns -1 on error or zero value on success
      */
     int hori_internal_read_firmware_version(hori_device_t* device);
 
+    /** @brief Read profile from device
+
+        @since 0.1.0
+        @param device[in|out] The device from which read the profile
+        @param profile_id[in] The profile number
+
+        @note
+            Device must be in HORI_MODE_CONFIG to be able to read profile
+      */
+    int hori_internal_read_profile(hori_device_t* device, int profile_id);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 /**
- * HEADER:
+ * HEADER generic pad
  *  - byte 0:
- *     15 - write data to
+ *     15 - write data to - 
  *  16 - read config report from gamepad
- /
-int hori_internal_command_validate(uint8_t* bytes, int byte_size, uint8_t** payload) {
-    if (payload) {
-        *payload = NULL;
-    }
-    if (byte_size <= 0 || bytes == NULL) {
-        return HORI_COMMAND_ID_UNKNOWN;
-    }
-    if (byte_size < 5) {
-        return HORI_COMMAND_ID_UNKNOWN:
-    }
-    // 18 - bytes[0] - probably audio?
-    //  1 - bytes[0] - probably gamepad
-    const uint8_t magic = bytes[0];
-    const uint8_t zero0 = bytes[1];
-    const uint8_t zero1 = bytes[2];
-    const uint8_t length = bytes[3];
-    const uint8_t command = bytes[4];
-    if (magic != 16 || zero0 != 0 || zero1 != 0) {
-        return HORI_COMMAND_ID_UNKNOWN;
-    }
-    if (length + 4 < byte_size) {
-        return HORI_COMMAND_ID_UNKNOWN;
-    }
-    if (command >= HORI_COMMAND_ID_PROFILE_ENTER && command <= HORI_COMMAND_ID_PROFILE_ACTIVE_SWITCH) {
-        return HORI_COMMAND_ID_UNKNOWN;
-    }
-    if (payload && byte_size > 5) {
-        *payload = bytes + 5;
-    }
-    return command;
-}
 
-/*
-- Enter Profile = 1
+ - Enter Profile = 1
 - Exit Profile = 2
 - Write Profile = 3
 - Read Profile = 4

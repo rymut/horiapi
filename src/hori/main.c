@@ -6,6 +6,9 @@
 #pragma comment(lib, "Cfgmgr32")
 #pragma comment(lib, "Hid")
 
+
+#include "../horiapi/hori_command.h"
+
 int main() {
     hori_device_t* driver = NULL;
     hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
@@ -33,12 +36,19 @@ int main() {
                 printf("cannot send heartbeat\n");
                 break;
             }
-            const char *version_str = hori_get_firmware_version_str(driver);
+            const char* version_str = hori_get_firmware_version_str(driver);
             if (version_str == NULL) {
                 printf("cannot get firmware\n");
                 break;
             }
             printf("firmware version: %s\n", version_str);
+            for (int profile_id = 4; profile_id >= 1; profile_id--) {
+                if (-1 == hori_internal_read_profile(driver, profile_id)) {
+                    printf("cannot read profile %d\n", profile_id);
+                    continue;
+                }
+            }
+
             Sleep(1000);
         }
     }
