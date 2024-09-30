@@ -25,12 +25,14 @@ include("${CONAN_PROVIDER}")
 find_package(hidapi REQUIRED)
 find_package(cargs REQUIRED)
 
+
 add_library(${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
     PUBLIC
         "include/horiapi/horiapi.h"
     PRIVATE
+        "src/horiapi/hori_assert.h"
         "src/horiapi/hori_command.c"
         "src/horiapi/hori_command.h"
         "src/horiapi/hori_context.c"
@@ -40,6 +42,7 @@ target_sources(${PROJECT_NAME}
         "src/horiapi/hori_device_win32.h"
         "src/horiapi/hori_endian.h"
         "src/horiapi/hori_profile.h"
+        "src/horiapi/hori_profile.c"
         "src/horiapi/hori_state.c"
         "src/horiapi/hori_time.h"
         "src/horiapi/hori_version.c"
