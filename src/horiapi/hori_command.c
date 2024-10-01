@@ -299,18 +299,17 @@ int hori_internal_read_firmware_version(hori_device_t* device) {
 #define HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX 7
 #define HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX 8
 
-int hori_internal_read_profile(hori_device_t* device, int profile_id) {
+int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config *profile) {
     if (profile_id < 1 || profile_id > 4) {
         // wrong profile
         return -1;
     }
-
     uint8_t read_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_READ_PROFILE, profile_id, 0, 0, 0, 0 };
     uint8_t read_profile_ack[64] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    struct hori_profile_config profile;
-    memset(&profile, 0, sizeof(profile));
-    uint8_t* profile_buffer = (uint8_t*)&profile;
-    int profile_remining_size = (int)sizeof(profile);
+    struct hori_profile_config profile_data;
+    memset(&profile_data, 0, sizeof(profile_data));
+    uint8_t* profile_buffer = (uint8_t*)&profile_data;
+    int profile_remining_size = (int)sizeof(profile_data);
     for (int part = 0; part < ceil(HORI_PROFILE_CONFIG_SIZE / (1.0 * HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE)); ++part) {
         if (profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
             profile_remining_size -= HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE;
@@ -346,8 +345,12 @@ int hori_internal_read_profile(hori_device_t* device, int profile_id) {
         return -1;
     }
 
-    if (-1 == hori_internal_is_valid_profile_config(&profile)) {
+    if (-1 == hori_internal_is_valid_profile_config(&profile_data)) {
         return -1;
     }
-    return sizeof(profile);
+
+    if (profile != NULL) {
+        memcpy(profile, &profile_data, sizeof(profile_data));
+    }
+    return sizeof(profile_data);
 }

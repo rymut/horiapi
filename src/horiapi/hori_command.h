@@ -100,7 +100,8 @@ extern "C" {
         @note
             Device must be in HORI_MODE_CONFIG to be able to read profile
       */
-    int hori_internal_read_profile(hori_device_t* device, int profile_id);
+
+    int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config *profile);
 
 #ifdef __cplusplus
 }

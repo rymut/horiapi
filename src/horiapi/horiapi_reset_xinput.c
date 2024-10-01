@@ -613,7 +613,7 @@ hori_device_config_t* hori_get_device_config(hori_device_t* device) {
     if (device == NULL || device->gamepad == NULL) {
         return NULL;
     }
-    return hori_internal_find_device_config(device->context->devices, hid_get_device_info(device->gamepad));
+    return device->config;
 }
 
 hori_device_t* hori_open_path(char* path, hori_context_t* context) {
@@ -644,8 +644,10 @@ hori_device_t* hori_open_path(char* path, hori_context_t* context) {
         free(platform_data);
         return NULL;
     }
+    device->hori_api_version = HORI_API_VERSION;
     device->platform_data = platform_data;
     device->context = ctx;
+    device->config = device_config;
 
     int result = -1;
     if (device_config->hid_config_product_id == product_id) {

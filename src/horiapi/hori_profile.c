@@ -1,5 +1,9 @@
 #include "hori_profile.h"
 
+#include <stdlib.h>
+
+#include <horiapi/horiapi.h>
+
 #include "hori_utf8.h"
 
 int hori_internal_is_valid_button_config(struct hori_button_config* config) {
@@ -42,4 +46,36 @@ int hori_internal_is_valid_profile_config(struct hori_profile_config* config) {
         }
     }
     return 0;
+}
+
+hori_profile_t *hori_make_profile(int product) {
+    struct hori_profile* result = (struct hori_profile*)calloc(1, sizeof(struct hori_profile));
+    if (result == NULL) {
+        return NULL;
+    }
+    result->hori_api_version = HORI_API_VERSION;
+    result->product = product;
+    result->error_code = HORI_PROFILE_NO_ERROR;
+    return result;
+}
+void hori_free_profile(hori_profile_t* profile) {
+    if (profile == NULL) {
+        return;
+    }
+    if (profile->hori_api_version != HORI_API_VERSION) {
+        return;
+    }
+    free(profile);
+}
+
+char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile) {
+    if (profile == NULL) {
+        return NULL;
+    }
+    if (profile->hori_api_version != HORI_API_VERSION) {
+        return NULL;
+    }
+    memset(profile->name, 0, sizeof(profile->name));
+    memcpy(profile->name, profile->config.name, sizeof(profile->config.name));
+    return profile->name;
 }

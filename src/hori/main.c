@@ -42,11 +42,14 @@ int main() {
                 break;
             }
             printf("firmware version: %s\n", version_str);
+
             for (int profile_id = 4; profile_id >= 1; profile_id--) {
-                if (-1 == hori_internal_read_profile(driver, profile_id)) {
+                hori_profile_t* profile = hori_get_profile(driver, profile_id);
+                if (NULL == profile) {
                     printf("cannot read profile %d\n", profile_id);
                     continue;
                 }
+                printf("%s\n", hori_get_profile_name(profile));
             }
 
             Sleep(1000);

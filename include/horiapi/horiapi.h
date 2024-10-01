@@ -424,6 +424,59 @@ extern "C" {
       */
     const char* HORI_API_CALL hori_version_str();
 
+    /** @brief Handle to hori profile
+
+        @ingroup API
+        @since 0.1.0
+     */
+    typedef struct hori_profile hori_profile_t;
+
+    /** @brief Get new profile handle for product
+
+        @ingroup API
+        @since 0.1.0
+        @param product The product code
+
+        @returns
+            NULL on error or handle
+      */
+    hori_profile_t* hori_make_profile(int product);
+
+    /** @brief Free profile handle
+
+        @ingroup API
+        @since 0.1.0
+        @param profile The handle returned from @see hori_make_profile
+     */
+    void hori_free_profile(hori_profile_t* profile);
+
+    /** @brief Get profile from device or cache
+
+        @ingroup API
+        @since 0.1.0
+        @param device The device handle
+        @param profile The profile number
+
+        @returns
+            This function returns NULL on error, or profile handle
+
+        @note
+            Returned pointer is to internally allocaded memory and should not be realesead
+      */
+    hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profile_id);
+
+    /** @brief Set profile to device / cache */
+    int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t *proflie);
+
+    /** @brief Get profile name */
+    char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile);
+
+    // Ideas of functions
+    //      - int hori_store_profile(hori_device_t* device, int profile_id);
+    // same as hori_set_profile(device, profile_id, hori_get_profile(device, profile_id))
+    //      - int hori_reset_profile(hori_device_t* device, int profile_id);
+    // same as hori_set_profile(device, profile_id, NULL)
+
     /**
      * @brief Open hori device using product and index (current order of listed devices)
      * @param product[in] product to open

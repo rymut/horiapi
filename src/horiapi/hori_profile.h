@@ -227,3 +227,25 @@ HORI_STATIC_ASSERT(sizeof(struct hori_profile_config) == HORI_PROFILE_CONFIG_SIZ
     @todo check other fields for known values (i.e. hori_button_config)
  */
 int hori_internal_is_valid_profile_config(struct hori_profile_config* config);
+
+#define HORI_PROFILE_NO_ERROR 0
+
+enum hori_profile_error_code {
+    // Unknown error
+    HORI_PROFILE_ERROR_CODE_UNKNOWN = 1
+};
+
+/** @brief Describe device profile
+ */
+struct hori_profile {
+    /** @brief Equal to @see HORI_API_VERSION */
+    int hori_api_version;
+    /** @brief Always zero terminated profile name */
+    char name[HORI_PROFILE_NAME_SIZE + 1];
+    /** @brief Product id */
+    int product;
+    /** @brief Last error code */
+    int error_code; // 0 meens no error
+    /** @brief Profile config */
+    struct hori_profile_config config;
+};
