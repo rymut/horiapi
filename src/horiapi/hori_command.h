@@ -95,7 +95,7 @@ extern "C" {
 
         @since 0.1.0
         @param device[in|out] The device from which read the profile
-        @param profile_id[in] The profile number
+        @param profile_id[in] The profile number (1,2,3,4 only)
 
         @note
             Device must be in HORI_MODE_CONFIG to be able to read profile

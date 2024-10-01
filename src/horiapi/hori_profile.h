@@ -212,3 +212,18 @@ struct hori_profile_config {
 HORI_STATIC_ASSERT(sizeof(union hori_profile_mapping) == HORI_PROFILE_BUTTONS_COUNT * sizeof(struct hori_button_config), hori_profile_mapping_size_requirement_not_meet);
 HORI_STATIC_ASSERT(sizeof(struct hori_profile_config) == HORI_PROFILE_CONFIG_SIZE, hori_profile_config_size_requirement_not_meet);
 
+/** @brief Check if profile config is valid
+
+    @detials
+        Profile is valid if:
+            - name contains valid UTF-8 string and rest of the bytes are filled with 0
+
+    @since 0.1.0
+    @param config Pointer to @see hori_profile_config
+
+    @returns
+        This function returns -1 if profile is invalid and 0 otherwise
+
+    @todo check other fields for known values (i.e. hori_button_config)
+ */
+int hori_internal_is_valid_profile_config(struct hori_profile_config* config);

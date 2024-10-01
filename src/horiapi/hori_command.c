@@ -300,7 +300,7 @@ int hori_internal_read_firmware_version(hori_device_t* device) {
 #define HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX 8
 
 int hori_internal_read_profile(hori_device_t* device, int profile_id) {
-    if (profile_id < 0) {
+    if (profile_id < 1 || profile_id > 4) {
         // wrong profile
         return -1;
     }
@@ -345,9 +345,9 @@ int hori_internal_read_profile(hori_device_t* device, int profile_id) {
     if (-1 == hori_internal_send_heartbeat(device)) {
         return -1;
     }
-    printf("read profile exists %d : '%d'\n", profile_id, profile.name[0] == 255);
-    if (profile_id == 0) {
-        int i = 0;
+
+    if (-1 == hori_internal_is_valid_profile_config(&profile)) {
+        return -1;
     }
     return sizeof(profile);
 }
