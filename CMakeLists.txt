@@ -45,10 +45,12 @@ target_sources(${PROJECT_NAME}
         "src/horiapi/hori_profile.c"
         "src/horiapi/hori_state.c"
         "src/horiapi/hori_time.h"
+        "src/horiapi/hori_utf8.c"
+        "src/horiapi/hori_utf8.h"
         "src/horiapi/hori_version.c"
         "src/horiapi/horiapi.c"
         "src/horiapi/horiapi_reset_xinput.c"
-        "src/hori/main.c"
+        "src/utf8/utf8.h"
 )
 target_include_directories(${PROJECT_NAME} PUBLIC "include" "src/horiapi" PRIVATE "include/horiapi")
 target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidapi)
