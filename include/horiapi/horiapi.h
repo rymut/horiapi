@@ -461,16 +461,32 @@ extern "C" {
             This function returns NULL on error, or profile handle
 
         @note
-            Returned pointer is to internally allocaded memory and should not be realesead
+            Returned pointer is to internally allocaded memory and should not be realesead.
+            Contents of handle can change due to call @see hori_set_profile.
       */
     hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profile_id);
 
-    /** @brief Set profile to device / cache */
-    int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t *proflie);
+    /** @brief Set profile to device / cache
+
+        @ingroup API
+        @since 0.1.0
+        @param device The device handle returned by @see hori_open
+        @param profile_id The profile number
+        @param profile The profile handle returned by @see hori_make_profile or @see hori_get_profile
+
+        @returns
+            The function returns -1 on error or number of bytes that changed in profile
+
+        @note
+            This function requires device to be in @see HORI_STATE_CONFIG.
+            The @p profile was acquired by @see hori_get_profile it should not be released by the user.
+    */
+    int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t *profile);
 
     /** @brief Get profile name */
     char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile);
 
+    int HORI_API_CALL hori_set_profile_name(hori_profile_t* profile, char const* name, int size);
     // Ideas of functions
     //      - int hori_store_profile(hori_device_t* device, int profile_id);
     // same as hori_set_profile(device, profile_id, hori_get_profile(device, profile_id))
