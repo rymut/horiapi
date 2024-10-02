@@ -103,6 +103,27 @@ extern "C" {
 
     int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config *profile);
 
+    int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size);
+
+    /** @brief Write profile to device (using difference method)
+
+        @param device[in|out] The device handle
+        @param profile_id[in] Profile id
+        @param profile_config Profile configuration to write
+
+        @returns
+            This function returns number of bytes written (byte difference) or -1 on error
+      */
+    int hori_internal_write_profile_difference(hori_device_t *device, int profile_id, struct hori_profile_config *profile_config);
+
+    /** @brief Write profile memory to device at specified offest and size
+
+        @param device[in|out] The device handle
+        @param profile_id Profile Id
+        @param 
+        @param data Memory to write (at least 
+     */
+    int hori_internal_write_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size);
 #ifdef __cplusplus
 }
 #endif // __cplusplus

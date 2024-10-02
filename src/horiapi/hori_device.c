@@ -160,3 +160,47 @@ hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profil
     return profile;
 }
 
+// update device->profiles only as last step
+int HORI_API_CALL hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t* profile) {
+    if (device == NULL) {
+        return -1;
+    }
+    if (profile != NULL && profile->product != device->config->product) {
+        return -1;
+    }
+    // TODO VALIDATE PROFILE
+    struct hori_profile_config profile_config;
+    memset(&profile_config, 0, sizeof(profile_config));
+    if (-1 == hori_internal_read_profile(device, profile_id, &profile_config)) {
+        return -1;
+    }
+    // write profile
+
+    struct hori_device_profile* device_profile = hori_internal_device_get_profile(device, profile_id);
+    if (device_profile == NULL) {
+        if (profile == NULL) {
+            return 0;
+        }
+        hori_profile_t* dev_profile = hori_make_profile(device->config->product);
+        if (dev_profile == NULL) {
+            return -1;
+        }
+        memcpy(&dev_profile->config, &profile_config, sizeof(profile_config));
+        if (-1 == hori_internal_device_set_profile(device, profile_id, dev_profile)) {
+            free(dev_profile);
+            return -1;
+        }
+        device_profile = hori_internal_device_get_profile(device, profile_id);
+    }
+    if (device_profile == NULL) {
+        // should never happen
+        return -1;
+    }
+    if (profile == NULL) {
+        memcpy(&device_profile->profile->config, &profile_config, sizeof(profile_config));
+        return 0;
+    }
+    // update profile data - partialy update
+    return hori_internal_write_profile_difference(device, profile_id, &profile->config);
+}
+

@@ -299,27 +299,54 @@ int hori_internal_read_firmware_version(hori_device_t* device) {
 #define HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX 7
 #define HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX 8
 
-int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config *profile) {
+int hori_internal_write_profile_difference(hori_device_t* device, int profile_id, struct hori_profile_config* profile_config) {
+    if (profile_id < 1 || profile_id > 4) {
+        return -1;
+    }
+    // 							static unsigned char writeProfile[8 + count]{ 15, 0, 0, 60, 3, profileId, startPos / 256, startPos % 256, count,  0 };
+
+    uint8_t write_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_WRITE_PROFILE, profile_id, 0, 0, 0, 0 };
+    return -1;
+}
+int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config* profile) {
+    struct hori_profile_config profile_data;
+    memset(&profile_data, 0, sizeof(profile_data));
+    int profile_data_size = (int)sizeof(profile_data);
+    int read_result = hori_internal_read_profile_memory(device, profile_id, 0, (uint8_t*)&profile_data, profile_data_size);
+    if (-1 == read_result || read_result < profile_data_size) {
+        return -1;
+    }
+    if (-1 == hori_internal_is_valid_profile_config(&profile_data)) {
+        return -1;
+    }
+    if (profile != NULL) {
+        memcpy(profile, &profile_data, sizeof(profile_data));
+    }
+    return sizeof(profile_data);
+}
+
+//int hori_internal_profile_offset(uint8_t* payload, )
+int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size) {
     if (profile_id < 1 || profile_id > 4) {
         // wrong profile
         return -1;
     }
+    if (offset < 0 || size < 0) {
+        // invalid arguments
+        return -1;
+    }
     uint8_t read_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_READ_PROFILE, profile_id, 0, 0, 0, 0 };
     uint8_t read_profile_ack[64] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    struct hori_profile_config profile_data;
-    memset(&profile_data, 0, sizeof(profile_data));
-    uint8_t* profile_buffer = (uint8_t*)&profile_data;
-    int profile_remining_size = (int)sizeof(profile_data);
-    for (int part = 0; part < ceil(HORI_PROFILE_CONFIG_SIZE / (1.0 * HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE)); ++part) {
-        if (profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
-            profile_remining_size -= HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE;
-        }
-        unsigned char offset = (HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE * part) / 256;
-        unsigned char size = (HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE * part) % 256;
-        unsigned char remining = profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
-        read_profile[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] = offset;
-        read_profile[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] = size;
-        read_profile[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX] = remining;
+    uint8_t buffer[HORI_PROFILE_CONFIG_SIZE];
+    memset(buffer, 0, sizeof(buffer));
+    int profile_remining_size = size;
+    for (int address = offset; address < min(offset + size, sizeof(struct hori_profile_config)); address += HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
+        unsigned char profile_block = address / 256;
+        unsigned char profile_position = address % 256;
+        unsigned char profile_remining = profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
+        read_profile[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] = profile_block;
+        read_profile[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] = profile_position;
+        read_profile[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX] = profile_remining;
         if (-1 == hid_write(device->control, read_profile, sizeof(read_profile))) {
             return -1;
         }
@@ -335,22 +362,21 @@ int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hor
         if (-1 == hori_internal_send_heartbeat(device)) {
             return -1;
         }
-        offset = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX];
-        size = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX];
-        remining = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX];
-        int profile_offset = ((int)offset) * 256 + size;
-        memcpy(profile_buffer + profile_offset, read_profile_ack + 9, remining);
+        profile_block = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX];
+        profile_position = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX];
+        profile_remining = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX];
+        int profile_offset = profile_block * 256 + profile_position;
+        memcpy(buffer + profile_offset, read_profile_ack + 9, profile_remining);
+        int a = profile_remining_size;
+        profile_remining_size -= profile_remining;
     }
     if (-1 == hori_internal_send_heartbeat(device)) {
         return -1;
     }
 
-    if (-1 == hori_internal_is_valid_profile_config(&profile_data)) {
-        return -1;
+    if (data != NULL) {
+        memcpy(data, buffer, size - profile_remining_size > 0 ? size - profile_remining_size : size);
     }
+    return size - profile_remining_size;
 
-    if (profile != NULL) {
-        memcpy(profile, &profile_data, sizeof(profile_data));
-    }
-    return sizeof(profile_data);
 }
