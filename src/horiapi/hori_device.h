@@ -16,8 +16,9 @@ extern "C" {
         struct hori_device_profile* next;
     };
 
+    /** @brief Device handle */
     struct hori_device {
-        /** Version of hori api */
+        /** @brief Version of hori api */
         int hori_api_version;
         hori_context_t* context;
         /** @brief Device config */
@@ -33,20 +34,20 @@ extern "C" {
         char* firmware_version_str;
         struct hori_firmware_version* firmware_version;
 
-        /**
-         * @brief profile data
-         */
+        /** @brief profile data */
         struct hori_device_profile* profiles;
     };
 
-    /**
-     @brief Write data to control interface
+    /** @brief Write data to control interface
      */
     int hori_internal_write_control(hori_device_t* device, uint8_t* data, int size);
-    /**
-     @brief Read data from control interface
+    /** @brief Read data from control interface
      */
     int hori_internal_read_control(hori_device_t* device, uint8_t* data, int size);
+
+    int hori_internal_read_control_timeout(hori_device_t* device, uint8_t* data, int size, int miliseconds);
+
+    int hori_internal_read_control_retry(hori_device_t* device, uint8_t* data, int size);
 
     /** @brief Set profile for device
 

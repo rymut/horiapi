@@ -29,6 +29,7 @@ int main() {
         }
     }
     hori_free_enumerate(devices);
+    int change = TRUE;
     if (driver) {
         printf("driver\n");
         for (int i = 0; i < 1000; i++) {
@@ -48,6 +49,12 @@ int main() {
                 if (NULL == profile) {
                     printf("cannot read profile %d\n", profile_id);
                     continue;
+                }
+                if (profile_id == 4 && change) {
+                    change = FALSE;
+                    char name[] = "nowy";
+                    hori_set_profile_name(profile, name, sizeof(name));
+                    hori_set_profile(driver, profile_id, profile);
                 }
                 printf("%s\n", hori_get_profile_name(profile));
             }

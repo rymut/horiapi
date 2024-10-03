@@ -253,6 +253,10 @@ extern "C" {
         int rediscover_miliseconds_delay;
         /** @brief read timeout */
         int read_timeout_ms;
+        /** @brief read retry timeout */
+        int retry_read_timeout_ms;
+        /** @brief number of retry attempts */
+        int retry_attempts;
     };
     typedef struct hori_context hori_context_t;
 

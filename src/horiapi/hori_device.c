@@ -18,7 +18,7 @@ int hori_internal_write_control(hori_device_t* device, uint8_t* data, int size) 
     return hid_write(device->control, data, size);
 }
 
-int hori_internal_read_control(hori_device_t* device, uint8_t* data, int size) {
+int hori_internal_read_control_timeout(hori_device_t* device, uint8_t* data, int size, int miliseconds) {
     if (device == NULL) {
         return -1;
     }
@@ -29,7 +29,21 @@ int hori_internal_read_control(hori_device_t* device, uint8_t* data, int size) {
         return -1;
     }
     memset(data, 0, size);
-    return hid_read_timeout(device->control, data, size, device->context->read_timeout_ms);
+    return hid_read_timeout(device->control, data, size, miliseconds);
+}
+
+int hori_internal_read_control_retry(hori_device_t* device, uint8_t* data, int size) {
+    if (device == NULL) {
+        return -1;
+    }
+    return hori_internal_read_control_timeout(device, data, size, device->context->retry_read_timeout_ms);
+}
+
+int hori_internal_read_control(hori_device_t* device, uint8_t* data, int size) {
+    if (device == NULL) {
+        return -1;
+    }
+    return hori_internal_read_control_timeout(device, data, size, device->context->read_timeout_ms);
 }
 
 void HORI_API_CALL hori_close(hori_device_t* device) {
@@ -145,7 +159,7 @@ hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profil
         return device_profile->profile;
     }
 
-    hori_profile_t* profile = hori_make_profile(device->config->hid_config_product_id);
+    hori_profile_t* profile = hori_make_profile(device->config->product);
     if (profile == NULL) {
         return NULL;
     }

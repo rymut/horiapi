@@ -66,7 +66,7 @@ int hori_internal_send_command_enter_profile(hori_device_t* device)
     return hori_internal_send_command(device, HORI_COMMAND_ID_ENTER_PROFILE);
 }
 
-static uint8_t hori_internal_heartbeat[] = { HORI_REPORT_ID_PROFILE_REQUEST, 0xAA, 0x55, 0x5A, 0xA5 };
+static uint8_t hori_internal_heartbeat[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0xAA, 0x55, 0x5A, 0xA5, 0 };
 
 int hori_internal_send_heartbeat(hori_device_t* device)
 {
@@ -303,11 +303,13 @@ int hori_internal_write_profile_difference(hori_device_t* device, int profile_id
     if (profile_id < 1 || profile_id > 4) {
         return -1;
     }
-    // 							static unsigned char writeProfile[8 + count]{ 15, 0, 0, 60, 3, profileId, startPos / 256, startPos % 256, count,  0 };
-
-    uint8_t write_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_WRITE_PROFILE, profile_id, 0, 0, 0, 0 };
-    return -1;
+    if (profile_config == NULL) {
+        return 0;
+    }
+    // TODO CHANGE THIS WILL WRITE ONLY memory
+    return hori_internal_write_profile_memory(device, profile_id, 0, profile_config->name, sizeof(profile_config->name));
 }
+
 int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config* profile) {
     struct hori_profile_config profile_data;
     memset(&profile_data, 0, sizeof(profile_data));
@@ -325,7 +327,52 @@ int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hor
     return sizeof(profile_data);
 }
 
-//int hori_internal_profile_offset(uint8_t* payload, )
+int hori_internal_write_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size) {
+    if (profile_id < 1 || profile_id > 4) {
+        // wrong profile
+        return -1;
+    }
+    if (offset < 0 || size < 0) {
+        // invalid arguments
+        return -1;
+    }
+    uint8_t write_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_WRITE_PROFILE, profile_id, 0, 0, 0, 0 };
+    int profile_remining_size = size;
+    for (int address = offset; address < min(offset + size, sizeof(struct hori_profile_config)); address += HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
+        unsigned char profile_block = address / 256;
+        unsigned char profile_position = address % 256;
+        unsigned char profile_remining = profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
+        write_profile[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] = profile_block;
+        write_profile[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] = profile_position;
+        write_profile[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX] = profile_remining;
+        if (-1 == hori_internal_send_heartbeat(device)) {
+            return -1;
+        }
+        if (-1 == hid_write(device->control, write_profile, sizeof(write_profile))) {
+            return -1;
+        }
+        uint8_t read[64];
+        memset(read, 0, sizeof(read));
+        int result = 0;
+        int count = 0; 
+        while (result <= 0) {
+            int result = hori_internal_read_control(device, read, sizeof(read));
+            if (result == -1) {
+                int i = 0;
+            }
+            if (result > 0) {
+                int i = 0;
+            }
+            count++;
+        }
+        // reread memory
+        profile_remining_size -= profile_remining;
+    }
+    if (-1 == hori_internal_send_heartbeat(device)) {
+        return -1;
+    }
+    return size - profile_remining_size;
+}
 int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size) {
     if (profile_id < 1 || profile_id > 4) {
         // wrong profile
@@ -335,48 +382,81 @@ int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int
         // invalid arguments
         return -1;
     }
-    uint8_t read_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_READ_PROFILE, profile_id, 0, 0, 0, 0 };
+    uint8_t read_profile[9] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_READ_PROFILE, profile_id, 0, 0, 0 };
+    memset(read_profile + 9, 0, sizeof(read_profile) - 9);
     uint8_t read_profile_ack[64] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
     uint8_t buffer[HORI_PROFILE_CONFIG_SIZE];
     memset(buffer, 0, sizeof(buffer));
     int profile_remining_size = size;
+    uint8_t buff1[64];
+    memset(buff1, 0, 0);
+    int count1 = hori_internal_read_control_timeout(device, buff1, HORI_INTERNAL_RESPONSE_SIZE, 5);
+    if (count1 > 0) {
+        int i = 0;
+    }
     for (int address = offset; address < min(offset + size, sizeof(struct hori_profile_config)); address += HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
+        if (-1 == hori_internal_send_heartbeat(device)) {
+            return -1;
+        }
         unsigned char profile_block = address / 256;
         unsigned char profile_position = address % 256;
-        unsigned char profile_remining = profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
+        unsigned char profile_remining = profile_remining_size >= HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
+        //printf("> %d : %d\n", profile_remining, profile_remining_size);
         read_profile[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] = profile_block;
         read_profile[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] = profile_position;
         read_profile[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX] = profile_remining;
         if (-1 == hid_write(device->control, read_profile, sizeof(read_profile))) {
             return -1;
         }
-        if (-1 == hori_internal_send_heartbeat(device)) {
+        // time is required to load memory that will be read
+        //_sleep(25);
+        int invalid = 1;
+        int attempt = 0;
+
+        for (attempt = -1; attempt < max(0, device->context->retry_attempts) && invalid == 1; ++attempt) {
+            int timeout_ms = attempt < 0 ? device->context->read_timeout_ms : device->context->retry_read_timeout_ms;
+            memset(read_profile_ack, 0, sizeof(read_profile_ack));
+            int response_size = hori_internal_read_control_timeout(device, read_profile_ack, HORI_INTERNAL_RESPONSE_SIZE, timeout_ms);
+            if (response_size <= 0) {
+                return -1;
+            }
+            int payload_offset = hori_internal_get_command_payload_offset(read_profile_ack, response_size, HORI_COMMAND_ID_READ_PROFILE_ACK);
+            if (payload_offset == -1) {
+                return -1;
+            }
+            invalid = profile_block != read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] ||
+                profile_position != read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] ||
+                profile_remining != read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX];
+            int count = 0; 
+            do {
+                uint8_t buff[64];
+                count = hori_internal_read_control_timeout(device, buff, HORI_INTERNAL_RESPONSE_SIZE, timeout_ms);
+                if (count > 0) {
+                    int i = 0;
+                }
+            } while (count > 0);
+            if (invalid == 1) {
+                int i = 0;
+            }
+        }
+        if (invalid == 1) {
             return -1;
         }
-        memset(read_profile_ack, 0, sizeof(read_profile_ack));
-        int response_size = hori_internal_read_control(device, read_profile_ack, HORI_INTERNAL_RESPONSE_SIZE);
-        int payload_offset = hori_internal_get_command_payload_offset(read_profile_ack, response_size, HORI_COMMAND_ID_READ_PROFILE_ACK);
-        if (payload_offset == -1) {
-            return -1;
+        if (attempt != 0) {
+            int i = 0;
         }
-        if (-1 == hori_internal_send_heartbeat(device)) {
-            return -1;
-        }
-        profile_block = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX];
-        profile_position = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX];
-        profile_remining = read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX];
         int profile_offset = profile_block * 256 + profile_position;
-        memcpy(buffer + profile_offset, read_profile_ack + 9, profile_remining);
-        int a = profile_remining_size;
-        profile_remining_size -= profile_remining;
+        if (profile_remining > 0) {
+            memcpy(buffer + profile_offset, read_profile_ack + 9, profile_remining);
+        }
+        profile_remining_size -= (int)profile_remining;
     }
     if (-1 == hori_internal_send_heartbeat(device)) {
         return -1;
     }
 
     if (data != NULL) {
-        memcpy(data, buffer, size - profile_remining_size > 0 ? size - profile_remining_size : size);
+        memcpy(data, buffer, size - profile_remining_size >= 0 ? size - profile_remining_size : size);
     }
-    return size - profile_remining_size;
-
+    return size - profile_remining_size >= 0 ? size - profile_remining_size : size;
 }

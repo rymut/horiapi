@@ -79,3 +79,16 @@ char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile) {
     memcpy(profile->name, profile->config.name, sizeof(profile->config.name));
     return profile->name;
 }
+
+int HORI_API_CALL hori_set_profile_name(hori_profile_t* profile, char const* name, int size) {
+    if (profile == NULL) {
+        return -1;
+    }
+    if (name != NULL && size > HORI_PROFILE_NAME_SIZE) {
+        return -1;
+    }
+    memset(profile->config.name, 0, sizeof(profile->config.name));
+    memcpy(profile->config.name, name, size);
+    hori_get_profile_name(profile);
+    return 0;
+}
