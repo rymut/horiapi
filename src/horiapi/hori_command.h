@@ -22,7 +22,8 @@ extern "C" {
         HORI_COMMAND_ID_EXIT_PROFILE = 2,
         HORI_COMMAND_ID_WRITE_PROFILE = 3,
         HORI_COMMAND_ID_READ_PROFILE = 4,
-        HORI_COMMAND_ID_READ_PROFILE_ACK = 5,
+        /** @brief Response to @see HORI_COMMAND_ID_READ_PROFILE, @see HORI_COMMAND_ID_WRITE_PROFILE */
+        HORI_COMMAND_ID_PROFILE_ACK = 5,
         HORI_COMMAND_ID_ACK = 6,
         HORI_COMMAND_ID_SWITCH_PROFILE = 7,
         HORI_COMMAND_ID_PROFILE_SAVE = 8, /// store to eprom _EEPROM
@@ -32,6 +33,32 @@ extern "C" {
         HORI_COMMAND_ID_READ_ACTIVE_PROFILE_ACK = 12,
         HORI_COMMAND_ID_SWITCH_ACTIVE_PROFILE = 13,
     };
+
+    struct hori_packet_header {
+        unsigned char report_id;
+        unsigned char zeros[2];
+        /** @brief How long is the message */
+        unsigned char remining;
+        /** @brief Command Id @see hori_command_id */
+        unsigned char command_id;
+    };
+
+    struct hori_packet_payload_profile {
+        unsigned char profile_id;
+        unsigned char block;
+        unsigned char position;
+        unsigned char size;
+        unsigned char data[55];
+    };
+
+    struct hori_packet {
+        struct hori_packet_header header;
+        union {
+            unsigned char unknown[59];
+            struct hori_packet_payload_profile profile;
+        } payload;
+    };
+
 
     int hori_internal_send_command_exit_profile(hori_device_t* device);
     int hori_internal_send_command_enter_profile(hori_device_t* device);
@@ -101,9 +128,11 @@ extern "C" {
             Device must be in HORI_MODE_CONFIG to be able to read profile
       */
 
-    int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config *profile);
+    int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hori_profile_config* profile);
 
-    int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size);
+    /** @brief Read profile memory
+     */
+    int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int address, uint8_t* data, int size);
 
     /** @brief Write profile to device (using difference method)
 
@@ -114,14 +143,14 @@ extern "C" {
         @returns
             This function returns number of bytes written (byte difference) or -1 on error
       */
-    int hori_internal_write_profile_difference(hori_device_t *device, int profile_id, struct hori_profile_config *profile_config);
+    int hori_internal_write_profile_difference(hori_device_t* device, int profile_id, struct hori_profile_config* profile_config);
 
     /** @brief Write profile memory to device at specified offest and size
 
         @param device[in|out] The device handle
         @param profile_id Profile Id
-        @param 
-        @param data Memory to write (at least 
+        @param
+        @param data Memory to write (at least
      */
     int hori_internal_write_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size);
 #ifdef __cplusplus
@@ -130,7 +159,7 @@ extern "C" {
 /**
  * HEADER generic pad
  *  - byte 0:
- *     15 - write data to - 
+ *     15 - write data to -
  *  16 - read config report from gamepad
 
  - Enter Profile = 1

@@ -58,7 +58,7 @@ static const hori_context_t hori_default_context = {
     .rediscover_miliseconds_delay = 10,
     .read_timeout_ms = 50,
     .retry_read_timeout_ms = 5,
-    .retry_attempts = 3,
+    .retry_attempts = 10,
 };
 
 hori_context_t* hori_context() {

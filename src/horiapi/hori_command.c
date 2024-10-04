@@ -21,6 +21,45 @@
         or offset to command payload, always less or equal to @p size
         (in case when command does not hold any payload)
  */
+static int hori_packet_validate_packet_header(struct hori_packet* packet, int size, int report_id, int command_id) {
+    if (packet == NULL) {
+        return -1;
+    }
+    if (size < sizeof(struct hori_packet_header)) {
+        return -1;
+    }
+    if (packet->header.report_id != report_id) {
+        return -1;
+    }
+    if (packet->header.zeros[0] != 0 || packet->header.zeros[1] != 0) {
+        return -1;
+    }
+    if (packet->header.remining > size - sizeof(struct hori_packet_header) + sizeof(packet->header.command_id)) {
+        return -1;
+    }
+    if (packet->header.command_id != (uint8_t)command_id) {
+        return -1;
+    }
+    return sizeof(struct hori_packet_header);
+}
+
+static int hori_packet_validate_packet_profile(struct hori_packet* packet, int size, int report_id) {
+    if (-1 == hori_packet_validate_packet_header(packet, size, report_id, HORI_COMMAND_ID_PROFILE_ACK)) {
+        return -1;
+    }
+    if (size < sizeof(struct hori_packet) - sizeof(((struct hori_packet_payload_profile*)0)->data)) {
+        return -1;
+    }
+    struct hori_packet_payload_profile* profile = &packet->payload.profile;
+    if ((int)profile->block * 256 + profile->position + profile->size > (int)sizeof(struct hori_profile_config)) {
+        return -1;
+    }
+    if (profile->size > sizeof(profile->data)) {
+        return -1;
+    }
+    return profile->size;
+}
+
 static int hori_internal_get_command_payload_offset(uint8_t const* data, int size, int command_id) {
     if (data == NULL) {
         return -1;
@@ -326,137 +365,171 @@ int hori_internal_read_profile(hori_device_t* device, int profile_id, struct hor
     }
     return sizeof(profile_data);
 }
+void hori_packet_dump_hex(struct hori_packet* packet, int size) {
+    if (packet == NULL || size <= 0) {
+        return;
+    }
+    uint8_t* memory = (uint8_t*)packet;
+    for (int i = 0; i < size; ++i) {
+        printf("%02X ", memory[i]);
+    }
+    printf("\n");
+}
+int hori_internal_get_profile_memory_response(hori_device_t* device, int profile_id, int address, uint8_t* data, int size) {
+    struct hori_packet packet;
+    for (int attempt = -1; attempt < max(0, device->context->retry_attempts); ++attempt) {
+        int timeout_ms = device->context->read_timeout_ms;
+        if (attempt >= 0) {
+            if (-1 == hori_send_heartbeat(device)) {
+                return -1;
+            }
+            timeout_ms = device->context->retry_read_timeout_ms;
+        }
+        memset(&packet, 0, sizeof(packet));
+        int packet_size = hori_internal_read_control_timeout(device, (uint8_t*)&packet, sizeof(packet), timeout_ms);
+        if (-1 == packet_size) {
+            return -1;
+        }
+        if (packet_size == 0) {
+            continue;
+        }
+        if (packet_size >= sizeof(struct hori_packet_header) && -1 == hori_packet_validate_packet_profile(&packet, packet_size, HORI_REPORT_ID_PROFILE_RESPONSE)) {
+            return -1;
+        }
+        struct hori_packet_payload_profile* profile = &packet.payload.profile;
+        if ((uint8_t)profile_id == profile->profile_id &&
+            address / 256 == (int)profile->block &&
+            address % 256 == (int)profile->position &&
+            size == (int)profile->size) {
+            if (data != NULL && size > 0) {
+                memcpy(data, profile->data, size);
+            }
+            packet_size = hori_internal_read_control_timeout(device, (uint8_t*)&packet, sizeof(packet), timeout_ms);
+            return size;
+        }
+    }
+    return -1;
+}
 
-int hori_internal_write_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size) {
+int hori_internal_write_profile_memory(hori_device_t* device, int profile_id, int address, uint8_t* data, int size) {
     if (profile_id < 1 || profile_id > 4) {
         // wrong profile
         return -1;
     }
-    if (offset < 0 || size < 0) {
+    if (size == 0) {
+        return 0;
+    }
+    if (data == NULL) {
+        return -1;
+    }
+    if (address < 0 || size < 0 || (size_t)address + size > sizeof(struct hori_profile_config)) {
         // invalid arguments
         return -1;
     }
-    uint8_t write_profile[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_WRITE_PROFILE, profile_id, 0, 0, 0, 0 };
+    struct hori_packet request;
+    if (-1 == hori_set_packet_header(&request, HORI_REPORT_ID_PROFILE_REQUEST, HORI_COMMAND_ID_WRITE_PROFILE)) {
+        return -1;
+    }
     int profile_remining_size = size;
-    for (int address = offset; address < min(offset + size, sizeof(struct hori_profile_config)); address += HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
-        unsigned char profile_block = address / 256;
-        unsigned char profile_position = address % 256;
-        unsigned char profile_remining = profile_remining_size > HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
-        write_profile[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] = profile_block;
-        write_profile[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] = profile_position;
-        write_profile[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX] = profile_remining;
+    uint8_t buffer[sizeof(request.payload.profile.data)];
+    for (int profile_address = address; profile_address < min(address + size, sizeof(struct hori_profile_config)); profile_address += (int)sizeof(buffer)) {
+        unsigned char remining = profile_remining_size > sizeof(buffer) ? sizeof(buffer) : profile_remining_size;
         if (-1 == hori_internal_send_heartbeat(device)) {
             return -1;
         }
-        if (-1 == hid_write(device->control, write_profile, sizeof(write_profile))) {
+        if (-1 == hori_set_packet_payload_profile(&request, profile_id, profile_address, data + (profile_address - address), remining)) {
             return -1;
         }
-        uint8_t read[64];
-        memset(read, 0, sizeof(read));
-        int result = 0;
-        int count = 0; 
-        while (result <= 0) {
-            int result = hori_internal_read_control(device, read, sizeof(read));
-            if (result == -1) {
-                int i = 0;
-            }
-            if (result > 0) {
-                int i = 0;
-            }
-            count++;
+        if (-1 == hid_write(device->control, (const unsigned char*)&request, sizeof(request))) {
+            return -1;
         }
-        // reread memory
-        profile_remining_size -= profile_remining;
+        if (remining != hori_internal_get_profile_memory_response(device, profile_id, address, buffer, remining)) {
+            return -1;
+        }
+        profile_remining_size -= remining;
     }
     if (-1 == hori_internal_send_heartbeat(device)) {
         return -1;
     }
     return size - profile_remining_size;
 }
-int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int offset, uint8_t* data, int size) {
+int hori_set_packet_header(struct hori_packet* packet, int report_id, int command_id) {
+    if (!packet) {
+        return -1;
+    }
+    memset(&packet->header, 0, sizeof(packet->header));
+    packet->header.report_id = report_id;
+    packet->header.command_id = command_id;
+    packet->header.remining = sizeof(struct hori_packet) - sizeof(packet->header) + sizeof(packet->header.command_id);
+    return sizeof(packet->header);
+}
+
+int hori_set_packet_payload_profile(struct hori_packet* packet, int profile_id, int address, uint8_t* data, int size) {
+    if (!packet) {
+        return -1;
+    }
+    if (size < 0 || size > sizeof(((struct hori_packet_payload_profile*)0)->data)) {
+        return -1;
+    }
+    if (address < 0 || address + size >(int)sizeof(struct hori_profile_config)) {
+        return -1;
+    }
+    if (profile_id < 1 || profile_id > 4) {
+        return -1;
+    }
+    struct hori_packet_payload_profile* profile = &packet->payload.profile;
+    memset(profile, 0, sizeof(struct hori_packet_payload_profile));
+    profile->profile_id = (uint8_t)profile_id;
+    profile->block = address / 256;
+    profile->position = address % 256;
+    profile->size = size;
+    if (data) {
+        memcpy(profile->data, data, size);
+    }
+    return size;
+}
+
+int hori_internal_read_profile_memory(hori_device_t* device, int profile_id, int address, uint8_t* data, int size) {
     if (profile_id < 1 || profile_id > 4) {
         // wrong profile
         return -1;
     }
-    if (offset < 0 || size < 0) {
+    if (address < 0 || size < 0) {
         // invalid arguments
         return -1;
     }
-    uint8_t read_profile[9] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_READ_PROFILE, profile_id, 0, 0, 0 };
-    memset(read_profile + 9, 0, sizeof(read_profile) - 9);
-    uint8_t read_profile_ack[64] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-    uint8_t buffer[HORI_PROFILE_CONFIG_SIZE];
-    memset(buffer, 0, sizeof(buffer));
-    int profile_remining_size = size;
-    uint8_t buff1[64];
-    memset(buff1, 0, 0);
-    int count1 = hori_internal_read_control_timeout(device, buff1, HORI_INTERNAL_RESPONSE_SIZE, 5);
-    if (count1 > 0) {
-        int i = 0;
+    if (address + size > sizeof(struct hori_profile_config)) {
+        return -1;
     }
-    for (int address = offset; address < min(offset + size, sizeof(struct hori_profile_config)); address += HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
+    uint8_t profile[sizeof(struct hori_profile_config)];
+    memset(&profile, 0, sizeof(profile));
+    struct hori_packet request;
+    if (-1 == hori_set_packet_header(&request, HORI_REPORT_ID_PROFILE_REQUEST, HORI_COMMAND_ID_READ_PROFILE)) {
+        return -1;
+    }
+    int profile_remining_size = size;
+    for (int profile_address = address; profile_address < min(address + size, (int)sizeof(struct hori_profile_config)); profile_address += HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE) {
         if (-1 == hori_internal_send_heartbeat(device)) {
             return -1;
         }
-        unsigned char profile_block = address / 256;
-        unsigned char profile_position = address % 256;
-        unsigned char profile_remining = profile_remining_size >= HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
-        //printf("> %d : %d\n", profile_remining, profile_remining_size);
-        read_profile[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] = profile_block;
-        read_profile[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] = profile_position;
-        read_profile[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX] = profile_remining;
-        if (-1 == hid_write(device->control, read_profile, sizeof(read_profile))) {
+        unsigned char remining = profile_remining_size >= HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE ? HORI_COMMAND_ID_READ_PROFILE_ACK_PAYLOAD_SIZE : profile_remining_size;
+        if (-1 == hori_set_packet_payload_profile(&request, profile_id, profile_address, NULL, remining)) {
             return -1;
         }
-        // time is required to load memory that will be read
-        //_sleep(25);
-        int invalid = 1;
-        int attempt = 0;
-
-        for (attempt = -1; attempt < max(0, device->context->retry_attempts) && invalid == 1; ++attempt) {
-            int timeout_ms = attempt < 0 ? device->context->read_timeout_ms : device->context->retry_read_timeout_ms;
-            memset(read_profile_ack, 0, sizeof(read_profile_ack));
-            int response_size = hori_internal_read_control_timeout(device, read_profile_ack, HORI_INTERNAL_RESPONSE_SIZE, timeout_ms);
-            if (response_size <= 0) {
-                return -1;
-            }
-            int payload_offset = hori_internal_get_command_payload_offset(read_profile_ack, response_size, HORI_COMMAND_ID_READ_PROFILE_ACK);
-            if (payload_offset == -1) {
-                return -1;
-            }
-            invalid = profile_block != read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_OFFSET_INDEX] ||
-                profile_position != read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_SIZE_INDEX] ||
-                profile_remining != read_profile_ack[HORI_COMMAND_ID_READ_PROFILE_REMINING_INDEX];
-            int count = 0; 
-            do {
-                uint8_t buff[64];
-                count = hori_internal_read_control_timeout(device, buff, HORI_INTERNAL_RESPONSE_SIZE, timeout_ms);
-                if (count > 0) {
-                    int i = 0;
-                }
-            } while (count > 0);
-            if (invalid == 1) {
-                int i = 0;
-            }
-        }
-        if (invalid == 1) {
+        if (-1 == hid_write(device->control, (const unsigned char*)&request, sizeof(request))) {
             return -1;
         }
-        if (attempt != 0) {
-            int i = 0;
+        if (-1 == hori_internal_get_profile_memory_response(device, profile_id, profile_address, profile + profile_address, remining)) {
+            return -1;
         }
-        int profile_offset = profile_block * 256 + profile_position;
-        if (profile_remining > 0) {
-            memcpy(buffer + profile_offset, read_profile_ack + 9, profile_remining);
-        }
-        profile_remining_size -= (int)profile_remining;
+        profile_remining_size -= (int)remining;
     }
     if (-1 == hori_internal_send_heartbeat(device)) {
         return -1;
     }
-
+    int read_bytes = size - profile_remining_size >= 0 ? size - profile_remining_size : size;
     if (data != NULL) {
-        memcpy(data, buffer, size - profile_remining_size >= 0 ? size - profile_remining_size : size);
+        memcpy(data, profile + address, read_bytes);
     }
-    return size - profile_remining_size >= 0 ? size - profile_remining_size : size;
+    return read_bytes;
 }
