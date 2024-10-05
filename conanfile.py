@@ -17,7 +17,9 @@ class HoriApiConan(ConanFile):
     requires = [
         "hidapi/0.14.0",
         "jansson/2.14",
-        "cargs/1.2.0"
+        "cargs/1.2.0",
+        "argtable3/3.2.2",
+        "libyaml/0.2.5"
     ]
     options = {
         "shared": [True, False],
