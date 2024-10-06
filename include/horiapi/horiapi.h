@@ -273,6 +273,9 @@ extern "C" {
 
     struct hori_enumeration {
         char* path;
+        int state;
+        wchar_t* manufacturer_string;
+        wchar_t* product_string;
         hori_device_config_t* device_config;
         struct hori_enumeration* next;
     };

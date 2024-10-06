@@ -60,11 +60,20 @@ hori_enumeration_t* hori_enumerate(hori_product_t product, hori_context_t* conte
         if (product != HORI_PRODUCT_ANY && product != device_config->product) {
             continue;
         }
+        int state = HORI_STATE_NONE;
+        if (device_config->hid_config_product_id == list_item->product_id) {
+            state = HORI_STATE_CONFIG;
+        }
+        else if (device_config->hid_normal_product_id == list_item->product_id) {
+            state = HORI_STATE_NORMAL;
+        }
         hori_enumeration_t* item = (hori_enumeration_t*)calloc(1, sizeof(hori_enumeration_t));
         if (item == NULL) {
             continue;
         }
         item->path = strdup(list_item->path);
+        item->manufacturer_string = _wcsdup(list_item->manufacturer_string);
+        item->product_string = _wcsdup(list_item->product_string);
         item->device_config = device_config;
         *back = item;
         back = &item->next;
@@ -80,6 +89,9 @@ void hori_free_enumerate(hori_enumeration_t* devices) {
     while (device != NULL) {
         hori_enumeration_t* item = device;
         device = device->next;
+        free(item->path);
+        free(item->manufacturer_string);
+        free(item->product_string);
         free(item);
     }
 }
