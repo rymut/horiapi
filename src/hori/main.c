@@ -1,15 +1,221 @@
-#include <horiapi/horiapi.h>
-#include <stdlib.h>
+#include <stdio.h>
 #include <Windows.h>
 
 #pragma comment (lib, "Setupapi")
 #pragma comment(lib, "Cfgmgr32")
 #pragma comment(lib, "Hid")
 
+#include <horiapi/horiapi.h>
+#include <argtable3.h>
 
 #include "../horiapi/hori_command.h"
 
-int main() {
+#include "argtable3.h"
+
+#define REG_EXTENDED 1
+#define REG_ICASE (REG_EXTENDED << 1)
+
+int main_list() {
+    return EXIT_SUCCESS;
+}
+
+int main_set() {
+    return EXIT_SUCCESS;
+}
+
+int main_get() {
+    return EXIT_SUCCESS;
+}
+
+int main_test() {
+    return EXIT_SUCCESS;
+}
+
+
+#define ARG_CMD(cmd) arg_rex1(NULL, NULL, cmd, NULL, REG_ICASE, NULL);
+#define ARG_HELP() arg_lit0("h", "help", "show help message")
+#define ARG_DEVICE() arg_int1("d", "device", "<device>", "device number")
+#define ARG_PROFILE() arg_int0("p", "profile", "<profile>", "profile number")
+#define ARG_OUTPUT() arg_file0("o", "output", "<file>", "output file")
+#define ARG_INPUT() arg_file1("i", "input", "<file>", "input file")
+
+/** @brief Main entry point
+
+    @note
+        Usages:
+            hori test [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-i,--input=<FILE>]
+  */
+int main(int argc, char** argv)
+{
+    const char* progname = "hori";
+
+    // syntax: [-h,--help] [-v,--version]
+    struct arg_lit* main_help = ARG_HELP();
+    struct arg_lit* main_version = arg_lit0("v", "version", "show version");
+    struct arg_end *main_end = arg_end(2);
+    void *main_argtable[] = { main_help, main_version, main_end };
+    int main_errors = 0;
+
+    // syntax: list [-h,--help]
+    struct arg_rex* list_cmd = ARG_CMD("list");
+    struct arg_lit* list_help = ARG_HELP();
+    struct arg_end* list_end = arg_end(2);
+    void* list_argtable[] = { list_cmd, list_help, list_end };
+    int list_errors = 0;
+
+    // syntax: get [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-o,--output=<FILE>]
+    struct arg_rex* get_cmd = ARG_CMD("get");
+    struct arg_lit* get_help = ARG_HELP();
+    struct arg_int* get_device = ARG_DEVICE();
+    struct arg_int* get_profile = ARG_PROFILE();
+    struct arg_file* get_output = ARG_OUTPUT();
+    struct arg_end* get_end = arg_end(20);
+    void* get_argtable[] = { get_cmd, get_help, get_device, get_profile, get_output, get_end };
+    int get_errors = 0;
+
+    // syntax: set [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-i,--input=<FILE>]
+    struct arg_rex* set_cmd = ARG_CMD("set");
+    struct arg_lit* set_help = ARG_HELP();
+    struct arg_int* set_device = ARG_DEVICE();
+    struct arg_int* set_profile = ARG_PROFILE();
+    struct arg_file* set_input = ARG_INPUT();
+    struct arg_end* set_end = arg_end(20);
+    void* set_argtable[] = { set_cmd, set_help, set_device, set_profile, set_input, set_end };
+    int set_errors = 0;
+
+    // syntax: set [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-i,--input=<FILE>]
+    struct arg_rex* test_cmd = ARG_CMD("test");
+    struct arg_lit* test_help = ARG_HELP();
+    struct arg_int* test_device = ARG_DEVICE();
+    struct arg_int* test_profile = ARG_PROFILE();
+    struct arg_file* test_input = ARG_INPUT();
+    struct arg_end* test_end = arg_end(20);
+    void* test_argtable[] = { test_cmd, test_help, test_device, test_profile, test_input, test_end };
+    int test_errors = 0;
+
+    int exitcode = EXIT_SUCCESS;
+
+    if (arg_nullcheck(main_argtable) != 0 ||
+        arg_nullcheck(list_argtable) != 0 ||
+        arg_nullcheck(get_argtable) != 0 ||
+        arg_nullcheck(set_argtable) != 0 ||
+        arg_nullcheck(test_argtable) != 0)
+    {
+        printf("%s: insufficient memory\n", progname);
+        exitcode = 1;
+        goto exit;
+    }
+
+    /* set any command line default values prior to parsing */
+    //outfile1->filename[0] = "-";
+    //outfile3->filename[0] = "-";
+
+    main_errors = arg_parse(argc, argv, main_argtable);
+    list_errors = arg_parse(argc, argv, list_argtable);
+    get_errors = arg_parse(argc, argv, get_argtable);
+    set_errors = arg_parse(argc, argv, set_argtable);
+    test_errors = arg_parse(argc, argv, test_argtable);
+
+    /* Execute the appropriate main<n> routine for the matching command line syntax */
+    /* In this example program our alternate command line syntaxes are mutually     */
+    /* exclusive, so we know in advance that only one of them can be successful.    */
+    if (list_errors == 0) {
+        if (list_help->count) {
+            printf("show list help\n");
+        }
+        else {
+            exitcode = main_list();
+        }
+    }
+    else if (set_errors == 0) {
+        if (set_help->count) {
+            printf("show set help\n");
+        }
+        else {
+            exitcode = main_set();
+        }
+    }
+    else if (get_errors == 0) {
+        if (get_help->count) {
+            printf("show get help\n");
+        }
+        else {
+            exitcode = main_get();
+        }
+    }
+    else if (test_errors == 0) {
+        if (test_help->count) {
+            printf("show test help\n");
+        }
+        else {
+            exitcode = main_test();
+        }
+    }
+    else
+    {
+        if (list_cmd->count > 0)
+        {
+            if (list_help->count > 0) {
+                printf("show list help\n");
+            }
+            else {
+                printf("show list errors\n");
+                arg_print_errors(stdout, list_end, progname);
+            }
+        }
+        else if (set_cmd->count > 0)
+        {
+            if (set_help->count > 0) {
+                printf("show set help\n");
+            }
+            else {
+                printf("show set errors\n");
+                arg_print_errors(stdout, set_end, progname);
+            }
+        }
+        else if (get_cmd->count > 0)
+        {
+            if (get_help->count > 0) {
+                printf("show get help\n");
+            }
+            else {
+                printf("show get errors\n");
+                arg_print_errors(stdout, get_end, progname);
+            }
+        }
+        else if (test_cmd->count > 0)
+        {
+            if (test_help->count > 0) {
+                printf("show test help\n");
+            }
+            else {
+                printf("show test errors\n");
+                arg_print_errors(stdout, test_end, progname);
+            }
+        }
+        else
+        {
+            /* no correct cmd literals were given, so we cant presume which syntax was intended */
+            printf("%s: missing <list|get|set|test> command.\n", progname);
+            printf("usage 1: %s ", progname);  arg_print_syntax(stdout, main_argtable, "\n");
+            printf("usage 2: %s ", progname);  arg_print_syntax(stdout, list_argtable, "\n");
+            printf("usage 3: %s ", progname);  arg_print_syntax(stdout, get_argtable, "\n");
+            printf("usage 3: %s ", progname);  arg_print_syntax(stdout, set_argtable, "\n");
+            printf("usage 3: %s ", progname);  arg_print_syntax(stdout, test_argtable, "\n");
+        }
+    }
+
+exit:
+    /* deallocate each non-null entry in each argtable */
+    arg_freetable(main_argtable, sizeof(main_argtable) / sizeof(main_argtable[0]));
+    arg_freetable(list_argtable, sizeof(list_argtable) / sizeof(list_argtable[0]));
+    arg_freetable(get_argtable, sizeof(get_argtable) / sizeof(get_argtable[0]));
+    arg_freetable(set_argtable, sizeof(set_argtable) / sizeof(set_argtable[0]));
+    arg_freetable(test_argtable, sizeof(test_argtable) / sizeof(test_argtable[0]));
+
+    return exitcode;
+}
+int main1() {
     hori_device_t* driver = NULL;
     hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
     int i = 0;

@@ -23,7 +23,7 @@ option(HORIAPI_BUILD_SHARED_LIBS "Build horiapi as shared library" OFF)
 project(horiapi LANGUAGES C)
 include("${CONAN_PROVIDER}")
 find_package(hidapi REQUIRED)
-find_package(cargs REQUIRED)
+find_package(argtable3 REQUIRED)
 
 
 add_library(${PROJECT_NAME})
@@ -58,7 +58,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER $<TARGET_PROPERTY
 
 add_executable(hori)
 target_sources(hori PRIVATE "src/hori/main.c")
-target_link_libraries(hori PRIVATE horiapi cargs::cargs)
+target_link_libraries(hori PRIVATE horiapi argtable3::argtable3)
 
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME} PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/horiapi)
