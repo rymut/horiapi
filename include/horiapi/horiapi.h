@@ -431,6 +431,33 @@ extern "C" {
       */
     const char* HORI_API_CALL hori_version_str();
 
+    /** @brief Handle to hori gampad
+
+        @ingroup API
+        @since 0.1.0
+      */
+    typedef struct hori_gamepad hori_gamepad_t;
+
+    hori_gamepad_t* hori_make_gamepad();
+
+    void hori_free_gamepad(hori_gamepad_t* gamepad);
+
+    /** @brief Read current gamepad state
+
+        @ingroup API
+        @since 0.1.0
+        @param device The device handle @see hori_open
+        @param gamepad The gamepad handle @see hori_make_gamepad
+
+        @returns
+            This function return -1 on failure, number of bytes read otherwise
+
+        @note
+            During HORI_STATE_NORMAL return profile gamepad output report
+            During HORI_STATE_CONFIG return read gamepad output report
+     */
+    int hori_read_gamepad(hori_device_t* device, hori_gamepad_t* gamepad);
+    int hori_read_gamepad_timeout(hori_device_t* device, hori_gamepad_t* gamepad, int miliseconds);
     /** @brief Handle to hori profile
 
         @ingroup API

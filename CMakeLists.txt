@@ -41,6 +41,8 @@ target_sources(${PROJECT_NAME}
         "src/horiapi/hori_device.c"
         "src/horiapi/hori_device_win32.h"
         "src/horiapi/hori_endian.h"
+        "src/horiapi/hori_gamepad.c"
+        "src/horiapi/hori_gamepad.h"
         "src/horiapi/hori_profile.h"
         "src/horiapi/hori_profile.c"
         "src/horiapi/hori_state.c"

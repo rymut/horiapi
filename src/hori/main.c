@@ -87,6 +87,54 @@ int main_test(int device_id, int wait_miliseconds) {
     return EXIT_SUCCESS;
 }
 
+int main_gamepad(int device_id, int wait_miliseconds) {
+    char* device_path = NULL;
+    hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
+    if (devices == NULL) {
+        printf("No devices found on the system");
+        return EXIT_FAILURE;
+    }
+    int i = 0;
+    for (hori_enumeration_t* device = devices; device != NULL; device = device->next, i++) {
+        if (device_id == i) {
+            device_path = strdup(device->path);
+        }
+    }
+    hori_free_enumerate(devices);
+
+    if (device_path == 0) {
+        printf("Device id %d not found\n", device_id);
+        return EXIT_FAILURE;
+    }
+    hori_device_t* device = hori_open_path(device_path, NULL);
+    if (device == NULL) {
+        printf("cannot open device %d\n", device_id);
+        return EXIT_FAILURE;
+    }
+    if (hori_get_state(device) != HORI_STATE_NORMAL) {
+        hori_set_state(device, HORI_STATE_NORMAL);
+    }
+    if (hori_get_state(device) != HORI_STATE_NORMAL) {
+        hori_close(device);
+        return EXIT_FAILURE;
+    }
+
+    hori_gamepad_t *gamepad = hori_make_gamepad();
+    if (gamepad == NULL) {
+        hori_close(device);
+        return EXIT_FAILURE;
+    }
+    double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
+    hori_clock_t start = hori_clock_now();
+    for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
+        // read gampade status
+        hori_sleep_ms(100);
+    }
+    hori_free_gamepad(gamepad);
+    hori_close(device);
+    device = NULL;
+    return EXIT_SUCCESS;
+}
 
 #define ARG_CMD(cmd) arg_rex1(NULL, NULL, cmd, NULL, REG_ICASE, NULL);
 #define ARG_HELP() arg_lit0("h", "help", "show help message")
@@ -97,10 +145,12 @@ int main_test(int device_id, int wait_miliseconds) {
 
 /** @brief Main entry point
 
-    @note
-        Usages:
-            hori test [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-i,--input=<FILE>]
-  */
+    @param argc The number of elements in @p argv
+    @param argv The array containing arguments
+
+    @returns
+        EXIT_FAILURE on error, EXIT_SUCCESS otherwise
+ */
 int main(int argc, char** argv)
 {
     const char* progname = "hori";
@@ -150,13 +200,23 @@ int main(int argc, char** argv)
     void* test_argtable[] = { test_cmd, test_help, test_device, test_profile, test_wait, test_input, test_end };
     int test_errors = 0;
 
+    // syntax: gamepad [-h,--help] [-d,--device=<DEVICE>] [-w,--wait=<miliseconds>]
+    struct arg_rex* gamepad_cmd = ARG_CMD("gamepad");
+    struct arg_lit* gamepad_help = ARG_HELP();
+    struct arg_int* gamepad_device = ARG_DEVICE();
+    struct arg_int* gamepad_wait = arg_int0("w", "wait", "<MILISECONDS>", "run test for miliseconds after connection (exclude connection time)");
+    struct arg_end* gamepad_end = arg_end(20);
+    void* gamepad_argtable[] = { gamepad_cmd, gamepad_help, gamepad_device, gamepad_wait, gamepad_end };
+    int gamepad_errors = 0;
+
     int exitcode = EXIT_SUCCESS;
 
     if (arg_nullcheck(main_argtable) != 0 ||
         arg_nullcheck(list_argtable) != 0 ||
         arg_nullcheck(get_argtable) != 0 ||
         arg_nullcheck(set_argtable) != 0 ||
-        arg_nullcheck(test_argtable) != 0)
+        arg_nullcheck(test_argtable) != 0 ||
+        arg_nullcheck(gamepad_argtable))
     {
         printf("%s: insufficient memory\n", progname);
         exitcode = 1;
@@ -166,11 +226,15 @@ int main(int argc, char** argv)
     test_device->ival[0] = 0;
     test_wait->ival[0] = -1;
 
+    gamepad_device->ival[0] = 0;
+    gamepad_wait->ival[0] = -1;
+
     main_errors = arg_parse(argc, argv, main_argtable);
     list_errors = arg_parse(argc, argv, list_argtable);
     get_errors = arg_parse(argc, argv, get_argtable);
     set_errors = arg_parse(argc, argv, set_argtable);
     test_errors = arg_parse(argc, argv, test_argtable);
+    gamepad_errors = arg_parse(argc, argv, gamepad_argtable);
 
     /* Execute the appropriate main<n> routine for the matching command line syntax */
     /* In this example program our alternate command line syntaxes are mutually     */
@@ -205,6 +269,14 @@ int main(int argc, char** argv)
         }
         else {
             exitcode = main_test(*test_device->ival, *test_wait->ival);
+        }
+    }
+    else if (gamepad_errors == 0) {
+        if (test_help->count) {
+            printf("show gampaed help\n");
+        }
+        else {
+            exitcode = main_gamepad(*test_device->ival, *test_wait->ival);
         }
     }
     else
@@ -257,7 +329,8 @@ int main(int argc, char** argv)
             printf("usage 2: %s ", progname);  arg_print_syntax(stdout, list_argtable, "\n");
             printf("usage 3: %s ", progname);  arg_print_syntax(stdout, get_argtable, "\n");
             printf("usage 3: %s ", progname);  arg_print_syntax(stdout, set_argtable, "\n");
-            printf("usage 3: %s ", progname);  arg_print_syntax(stdout, test_argtable, "\n");
+            printf("usage 4: %s ", progname);  arg_print_syntax(stdout, test_argtable, "\n");
+            printf("usage 5: %s ", progname);  arg_print_syntax(stdout, gamepad_argtable, "\n");
         }
     }
 
@@ -268,6 +341,7 @@ exit:
     arg_freetable(get_argtable, sizeof(get_argtable) / sizeof(get_argtable[0]));
     arg_freetable(set_argtable, sizeof(set_argtable) / sizeof(set_argtable[0]));
     arg_freetable(test_argtable, sizeof(test_argtable) / sizeof(test_argtable[0]));
+    arg_freetable(gamepad_argtable, sizeof(gamepad_argtable) / sizeof(gamepad_argtable[0]));
 
     return exitcode;
 }
