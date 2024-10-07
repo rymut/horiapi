@@ -39,7 +39,51 @@ int main_get() {
     return EXIT_SUCCESS;
 }
 
-int main_test() {
+#include "../horiapi/hori_time.h"
+
+int main_test(int device_id, int wait_miliseconds) {
+    char* device_path = NULL;
+    hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
+    if (devices == NULL) {
+        printf("No devices found on the system");
+        return EXIT_FAILURE;
+    }
+    int i = 0;
+    for (hori_enumeration_t* device = devices; device != NULL; device = device->next, i++) {
+        if (device_id == i) {
+            device_path = strdup(device->path);
+        }
+    }
+    hori_free_enumerate(devices);
+
+    if (device_path == 0) {
+        printf("Device id %d not found\n", device_id);
+        return EXIT_FAILURE;
+    }
+    hori_device_t* device = hori_open_path(device_path, NULL);
+    if (device == NULL) {
+        printf("cannot open device %d\n", device_id);
+        return EXIT_FAILURE;
+    }
+    if (hori_get_state(device) != HORI_STATE_CONFIG) {
+        hori_set_state(device, HORI_STATE_CONFIG);
+    }
+    if (hori_get_state(device) != HORI_STATE_CONFIG) {
+        hori_close(device);
+        return EXIT_FAILURE;
+    }
+    double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
+    hori_clock_t start = hori_clock_now();
+    for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
+        if (-1 == hori_send_heartbeat(device)) {
+            printf("cannot send heartbeat\n");
+            break;
+        }
+        printf("check status - %5.2lf\n", diff);
+        hori_sleep_ms(100);
+    }
+    hori_close(device);
+    device = NULL;
     return EXIT_SUCCESS;
 }
 
@@ -95,14 +139,15 @@ int main(int argc, char** argv)
     void* set_argtable[] = { set_cmd, set_help, set_device, set_profile, set_input, set_end };
     int set_errors = 0;
 
-    // syntax: set [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-i,--input=<FILE>]
+    // syntax: test [-h,--help] [-d,--device=<DEVICE>] [-p,--profile=<PROFILE>] [-w,--wait=<miliseconds>] [-i,--input=<FILE>]
     struct arg_rex* test_cmd = ARG_CMD("test");
     struct arg_lit* test_help = ARG_HELP();
     struct arg_int* test_device = ARG_DEVICE();
     struct arg_int* test_profile = ARG_PROFILE();
+    struct arg_int* test_wait = arg_int0("w", "wait", "<MILISECONDS>", "run test for miliseconds after connection (exclude connection time)");
     struct arg_file* test_input = ARG_INPUT();
     struct arg_end* test_end = arg_end(20);
-    void* test_argtable[] = { test_cmd, test_help, test_device, test_profile, test_input, test_end };
+    void* test_argtable[] = { test_cmd, test_help, test_device, test_profile, test_wait, test_input, test_end };
     int test_errors = 0;
 
     int exitcode = EXIT_SUCCESS;
@@ -118,9 +163,8 @@ int main(int argc, char** argv)
         goto exit;
     }
 
-    /* set any command line default values prior to parsing */
-    //outfile1->filename[0] = "-";
-    //outfile3->filename[0] = "-";
+    test_device->ival[0] = 0;
+    test_wait->ival[0] = -1;
 
     main_errors = arg_parse(argc, argv, main_argtable);
     list_errors = arg_parse(argc, argv, list_argtable);
@@ -160,7 +204,7 @@ int main(int argc, char** argv)
             printf("show test help\n");
         }
         else {
-            exitcode = main_test();
+            exitcode = main_test(*test_device->ival, *test_wait->ival);
         }
     }
     else

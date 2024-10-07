@@ -2,7 +2,7 @@
 
 #include <time.h>
 
-#include <synchapi.h>
+#include <Windows.h>
 #pragma comment(lib, "Kernel32")
 
 #if defined(HORI_DOXYGEN)
@@ -18,16 +18,16 @@ hori_clock_t hori_clock_now();
 
 /** @brief Get clock difference in seconds
 
-    @param prev Value returned by @see hori_clock_now
-    @param now Value returned by @see hori_clock_now
+    @param clock1 Value returned by @see hori_clock_now
+    @param clock2 Value returned by @see hori_clock_now
 
     @returns
-        This function returns amount of of time elapsed between prev and now
+        This function returns amount of of time elapsed between clock1 and clock2 (clock1 - clock2)
 
     @note
-        Returned value will be negative if prev > now, and zero if prev == now
+        Returned value will be negative if clock1 < clock2 , and zero if clock1 == clock2
  */
-double hori_clock_diff(hori_clock_t prev, hori_clock_t now);
+double hori_clock_diff(hori_clock_t clock1, hori_clock_t clock2);
 
 /** @brief Sleep for amount of miliseconds
 
@@ -40,6 +40,6 @@ void hori_sleep_ms(int miliseconds);
 #else
 typedef clock_t hori_clock_t;
 #define hori_clock_now() clock()
-#define hori_clock_diff(prev, now) (difftime(prev, now) / CLOCKS_PER_SEC)
+#define hori_clock_diff(clock1, clock2) (difftime(clock1, clock2) / CLOCKS_PER_SEC)
 #define hori_sleep_ms(delay) Sleep(delay)
 #endif
