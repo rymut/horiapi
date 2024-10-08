@@ -1,5 +1,7 @@
 #pragma once
 
+#include <assert.h>
+
 #if defined(HORI_DOXYGEN)
 /** @brief Complie time assertion
 
@@ -85,32 +87,25 @@ _HORI_VA_ARGS_IS_EMPTY_IMPL(                                                    
         char _HORI_STATIC_ASSERT_MAKE_FIELD_NAME(expr, __VA_ARGS__): 8 + !(expr); \
     }
 
-_HORI_STATIC_ASSERT(1 == 1, test);
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 // C23 - supports static_assert(expr, msg) && static_assert(expr)
 #define HORI_STATIC_ASSERT(expr, ...) static_assert(expr, __VA_ARGS__)
 #define HORI_STATIC_ASSERT(expr, ...) \
-    _HORI_IIF(ISEMPTY(__VA_ARGS__))( \
+    _HORI_IIF(_HORI_VA_ARGS_IS_EMPTY(__VA_ARGS__))( \
             static_assert(expr), \
-            static_assert(expr, __VA_ARGS__) \
-        ) \
-    _HORI_IIF(_HAS_TEXT(expr, __VA_ARGS__))( \
-        static_assert((expr), _HORI_STR(GET_TEXT(expr, __VA_ARGS__))), \
-        static_assert((expr)) \
-    )
+            static_assert(expr, _HORI_STR(_HORI_VA_ARG_0(__VA_ARGS__, NULL))) \
+        )
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 // C11 - supports static_assert(expr, msg) when message is missing str of expr is used
 #define HORI_STATIC_ASSERT(expr, ...) \
-    static_assert((expr), \
-        _HORI_IIF(ISEMPTY(__VA_ARGS__))( \
+    _Static_assert((expr), \
+        _HORI_IIF(_HORI_VA_ARGS_IS_EMPTY(__VA_ARGS__))( \
             _HORI_STR(expr), \
-            _HORI_STR(__VA_ARGS__) \
+            _HORI_STR(_HORI_VA_ARG_0(__VA_ARGS__, NULL)) \
         ) \
     )
 #else 
 #define HORI_STATIC_ASSERT(expr, ...) _HORI_STATIC_ASSERT(expr, __VA_ARGS__)
 #endif //
 
-HORI_STATIC_ASSERT(1 == 1, test, test1);
 #endif // !defined(HORI_DOXYGEN)
