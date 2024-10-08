@@ -1,6 +1,9 @@
 #include "horiapi.h"
 
+#include "hori_gamepad.h"
+
 hori_gamepad_t* hori_make_gamepad() {
+    
     return NULL;
 }
 
