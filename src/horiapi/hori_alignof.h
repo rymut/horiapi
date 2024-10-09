@@ -1,5 +1,7 @@
 #pragma once
 
+#include "hori_macros.h"
+
 #if defined(HORI_DOXYGEN)
 /** @brief Get type aligment
 
@@ -23,7 +25,22 @@ void HORI_ALIGNOF(type_name);
 /* C11 - supports _Alignof(type_name) when message is missing str of expr is used */
 #define HORI_ALIGNOF(type_name) _Alignof(type_name)
 #else
-#define HORI_ALIGNOF(type_name) (sizeof(struct { char prefix; type_name value; char suffix; })/3)
+#if defined(_HORI_UNIQUE_INDEX)
+#define HORI_ALIGNOF(type_name) (sizeof( \
+    struct _HORI_CONCAT(_hori_alignof_, _HORI_UNIQUE_INDEX) { \
+        char prefix; \
+        type_name value; \
+        char suffix; \
+    })/3)
+#else
+/* Will work but will generate warning on some compilers */
+#define HORI_ALIGNOF(type_name) (sizeof( \
+    struct { \
+        char prefix; \
+        type_name value; \
+        char suffix; \
+    })/3)
+#endif
 #endif
 
 #endif /* !defined(HORI_DOXYGEN) */

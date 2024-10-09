@@ -26,9 +26,6 @@ void HORI_STATIC_ASSERT(int expr, const char *message);
 */
 #else
 
-#define _HORI_CONCAT_IMPL(prefix, suffix) prefix##suffix
-#define _HORI_CONCAT(prefix, suffix) _HORI_CONCAT_IMPL(prefix, suffix)
-
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
 /* C23 - supports static_assert(expr, msg) && static_assert(expr) */
 #define HORI_STATIC_ASSERT(expr, message) \
@@ -38,14 +35,9 @@ void HORI_STATIC_ASSERT(int expr, const char *message);
 #define HORI_STATIC_ASSERT(expr, message) \
     _Static_assert((expr), message)
 #else
-#if defined(__COUNTER__)
-    #define _HORI_STATIC_ASSERT_INDEX __COUNTER__
-#elif defined(__LINE__)
-    #define _HORI_STATIC_ASSERT_INDEX __LINE__
-#endif
-#if defined(_HORI_STATIC_ASSERT_INDEX)
+#if defined(_HORI_UNIQUE_INDEX)
     #define HORI_STATIC_ASSERT(expr, message) \
-        struct _HORI_CONCAT(_static_assertion_test_, _HORI_STATIC_ASSERT_INDEX) { \
+        struct _HORI_CONCAT(_static_assertion_test_, _HORI_UNIQUE_INDEX) { \
             int static_assertion_failed: sizeof(int) * 8 + !(expr); \
         }
 #else
