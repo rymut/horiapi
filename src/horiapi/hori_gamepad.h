@@ -2,6 +2,8 @@
 
 #include <inttypes.h>
 
+#include "horiapi/horiapi.h"
+
 #include "hori_endian.h"
 #include "hori_assert.h"
 
@@ -14,30 +16,74 @@ struct hori_linear_value {
     unsigned char positive : 1;
 #endif
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_linear_value) == 1);
+HORI_STATIC_ASSERT(sizeof(struct hori_linear_value) == 1, "");
 
 struct hori_stick_value {
     struct hori_linear_value x;
     struct hori_linear_value y;
 };
 
+// https://github.com/nondebug/dualsense
+struct hori_ps5_gamepad_report {
+    unsigned char report_id;
+};
+
 // https://www.psdevwiki.com/ps4/DS4-USB
+// https://controllers.fandom.com/wiki/Sony_DualShock_4/Data_Structures
+struct hori_ps4_touch_finger_data {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+    uint8_t index : 7;
+    uint8_t no_touch : 1;
+    uint16_t x : 12;
+    uint16_t y : 12;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+    uint16_t y : 12;
+    uint16_t x : 12;
+    uint8_t no_touch : 1;
+    uint8_t index : 7;
+#endif
+};
+
+struct hori_ps4_touch_data {
+    uint8_t timestamp;
+    struct hori_ps4_touch_finger_data finger[2];
+};
+
 /** @brief PS4 buttons structure
  */
 struct hori_ps4_gamepad_report {
     /* -1 */ unsigned char report_id;
-    struct hori_stick_value left_stick;
-    struct hori_stick_value right_stick;
+    unsigned char left_stick[2];
+    unsigned char right_stick[2];
     struct hori_ps4_buttons {
         struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            unsigned char hat_buttons : 3;
+            unsigned char hat_center : 1;
+            unsigned char square : 1;
+            unsigned char cross : 1;
+            unsigned char circle : 1;
+            unsigned char triangle : 1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             unsigned char triangle : 1;
             unsigned char circle : 1;
             unsigned char cross : 1;
             unsigned char square : 1;
             unsigned char hat_center : 1;
             unsigned char hat_buttons : 3;
+#endif 
         };
         struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            unsigned char l1 : 1;
+            unsigned char r1 : 1;
+            unsigned char l2 : 1;
+            unsigned char r2 : 1;
+            unsigned char share : 1;
+            unsigned char options : 1;
+            unsigned char l3 : 1;
+            unsigned char r3 : 1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             unsigned char r3 : 1;
             unsigned char l3 : 1;
             unsigned char options : 1;
@@ -46,11 +92,18 @@ struct hori_ps4_gamepad_report {
             unsigned char l2 : 1;
             unsigned char r1 : 1;
             unsigned char l1 : 1;
+#endif
         };
         struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             unsigned char counter : 6;
             unsigned char tpad : 1;
             unsigned char ps : 1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+            unsigned char ps : 1;
+            unsigned char tpad : 1;
+            unsigned char counter : 6;
+#endif
         };
     } buttons;
     unsigned char left_trigger; // l2 analog
@@ -64,17 +117,19 @@ struct hori_ps4_gamepad_report {
     /*20  */ int16_t accelerometer_y;
     /*22  */ int16_t accelerometer_z;
     /*24  */ uint8_t ext_data[5]; // range can be set by EXT device
-    /*29  */ uint8_t power_percent: 4; // 0x00-0x0A or 0x01-0x0B if plugged int
+    /*29  */ uint8_t power_percent : 4; // 0x00-0x0A or 0x01-0x0B if plugged int
     /*29.4*/ uint8_t plugged_power_cable : 1;
     /*29.5*/ uint8_t plugged_headphones : 1;
     /*29.6*/ uint8_t plugged_microphone : 1;
-    /*29,7*/ uint8_t plugged_ext: 1;
-    /*30.0*/ uint8_t unknown_ext1: 1; // ExtCapableOfExtraData?
-    /*30.1*/ uint8_t unknown_ext2: 1; // ExtHasExtraData?
-    /*30.2*/ uint8_t NotConnected : 1; // Used by dongle to indicate no controller
+    /*29,7*/ uint8_t plugged_ext : 1;
+    /*30.0*/ uint8_t unknown_ext1 : 1; // ExtCapableOfExtraData?
+    /*30.1*/ uint8_t unknown_ext2 : 1; // ExtHasExtraData?
+    /*30.2*/ uint8_t not_connected : 1; // Used by dongle to indicate no controller
     /*30.3*/ uint8_t Unk1 : 5;
     /*31  */ uint8_t Unk2; // unused?
-    /*32  */ uint8_t TouchCount;
+    /*32  */ uint8_t touch_ext_count;
+    struct hori_ps4_touch_data touch;
+    struct hori_ps4_touch_data touch_ext[];
 };
 
 /** @brief Describe hori gamepad report when controller is in HORI_STATE_CONFIG state
@@ -97,7 +152,7 @@ struct hori_config_gamepad_report {
         // depends on controller mapping
         struct {
             unsigned char r3 : 1;
-            unsigned char l3: 1;
+            unsigned char l3 : 1;
             unsigned char Options : 1;
             unsigned char Share : 1;
             unsigned char r2 : 1;
@@ -106,8 +161,8 @@ struct hori_config_gamepad_report {
             unsigned char l1 : 1;
         };
         struct {
-            unsigned char fr1: 1; // trigger right
-            unsigned char fl1: 1;	// trigger left
+            unsigned char fr1 : 1; // trigger right
+            unsigned char fl1 : 1;	// trigger left
             unsigned char camera : 1;
             unsigned char home : 1;
             // other models
@@ -132,8 +187,9 @@ struct hori_config_gamepad_report {
 
 struct hori_gamepad {
     // bit mapping for buttons
-    int product;
-    int mode;
+    int device_product;
+    int device_config_mode;
+    int device_state;
     int button_map[34]; // ?? how any buttons here
     union {
         struct hori_config_gamepad_report config;
