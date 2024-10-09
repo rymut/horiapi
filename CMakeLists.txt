@@ -32,6 +32,7 @@ target_sources(${PROJECT_NAME}
     PUBLIC
         "include/horiapi/horiapi.h"
     PRIVATE
+        "src/horiapi/hori_alignof.h"
         "src/horiapi/hori_assert.h"
         "src/horiapi/hori_command.c"
         "src/horiapi/hori_command.h"
