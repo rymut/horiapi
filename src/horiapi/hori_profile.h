@@ -24,7 +24,7 @@ struct hori_value_config {
     unsigned char value;
 };
 
-HORI_STATIC_ASSERT(sizeof(struct hori_value_config) == 2, struct_hori_value_config_invalid_size);
+HORI_STATIC_ASSERT(sizeof(struct hori_value_config) == 2, "");
 
 struct hori_analog_config {
     unsigned char orginal;
@@ -50,7 +50,7 @@ struct hori_stick_config {
     struct hori_analog_config analog[2];
 
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_stick_config) == 16, struct_hori_stick_config_invalid_size);
+HORI_STATIC_ASSERT(sizeof(struct hori_stick_config) == 16, "");
 
 enum hori_stick_option {
     HORI_STICK_OPTION_ALL, // - bool
@@ -70,7 +70,7 @@ int hori_internal_set_stick_flag(struct hori_stick_config* stick, int key, int v
 struct hori_feedback_config {
     unsigned char Feedback[HORI_FEEDBACK_CONFIG_SIZE];
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_feedback_config) == HORI_FEEDBACK_CONFIG_SIZE, hori_feedback_config_required_size_is_6_bytes);
+HORI_STATIC_ASSERT(sizeof(struct hori_feedback_config) == HORI_FEEDBACK_CONFIG_SIZE, "");
 
 enum hori_button_option {
     HORI_BUTTON_OPTION_ALL,
@@ -114,7 +114,7 @@ struct hori_button_config {
     unsigned char linear_value;	//10
     struct hori_analog_config map_analog[2];			//14
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE, hori_feedback_config_size_requirement_not_meet);
+_HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE , "");
 
 /** @brief Get value of key
 
@@ -139,7 +139,7 @@ struct hori_audio_config {
     unsigned char microphone_mute;
     unsigned char microphone_sensitivity;
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_audio_config) == HORI_AUDIO_CONFIG_SIZE, hori_audio_config_size_requirement_not_meet);
+HORI_STATIC_ASSERT(sizeof(struct hori_audio_config) == HORI_AUDIO_CONFIG_SIZE, "");
 
 struct hori_wheel_config {
     unsigned char enable_0; // always 1 if wheel is supported
@@ -148,7 +148,7 @@ struct hori_wheel_config {
     unsigned char deadzone; // if e[3] == 0 ? e[3] = 4; e[3] - 4
     unsigned char sensitivity; // if e[4] == 0 ? e[4] = 4; e[4] - 4
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_wheel_config) == HORI_WHEEL_CONFIG_SIZE, hori_wheel_config_size_requirement_not_meet);
+HORI_STATIC_ASSERT(sizeof(struct hori_wheel_config) == HORI_WHEEL_CONFIG_SIZE, "");
 
 struct hori_profile_config {
     char name[HORI_PROFILE_NAME_SIZE];		// 0 - 31
@@ -209,8 +209,8 @@ struct hori_profile_config {
     struct hori_wheel_config wheel;
 };
 
-HORI_STATIC_ASSERT(sizeof(union hori_profile_mapping) == HORI_PROFILE_BUTTONS_COUNT * sizeof(struct hori_button_config), hori_profile_mapping_size_requirement_not_meet);
-HORI_STATIC_ASSERT(sizeof(struct hori_profile_config) == HORI_PROFILE_CONFIG_SIZE, hori_profile_config_size_requirement_not_meet);
+HORI_STATIC_ASSERT(sizeof(union hori_profile_mapping) == HORI_PROFILE_BUTTONS_COUNT * sizeof(struct hori_button_config), "");
+HORI_STATIC_ASSERT(sizeof(struct hori_profile_config) == HORI_PROFILE_CONFIG_SIZE, "");
 
 /** @brief Check if profile config is valid
 
