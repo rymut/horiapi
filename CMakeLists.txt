@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.20)
 
 # conan 2.0 required settings
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_C_STANDARD 99)
 set(CONAN_HOST_PROFILE "auto-cmake")
 
 # download conan provider
