@@ -128,7 +128,12 @@ int main_gamepad(int device_id, int wait_miliseconds) {
     hori_clock_t start = hori_clock_now();
     for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
         // read gampade status
-        hori_sleep_ms(100);
+        int result = hori_read_gamepad_timeout(device, gamepad, 150);
+        if (result == -1) {
+            printf("errror\n");
+            break;
+        }
+        printf("read gamepad report %d\n", result);
     }
     hori_free_gamepad(gamepad);
     hori_close(device);
