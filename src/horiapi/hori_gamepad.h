@@ -6,6 +6,7 @@
 
 #include "hori_endian.h"
 #include "hori_assert.h"
+#include "hori_alignof.h"
 
 struct hori_linear_value {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -17,11 +18,13 @@ struct hori_linear_value {
 #endif
 };
 HORI_STATIC_ASSERT(sizeof(struct hori_linear_value) == 1, "");
+HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_linear_value) == 1, "");
 
 struct hori_stick_value {
     struct hori_linear_value x;
     struct hori_linear_value y;
 };
+HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_stick_value) == 1, "");
 
 // https://github.com/nondebug/dualsense
 struct hori_ps5_gamepad_report {
@@ -43,6 +46,8 @@ struct hori_ps4_touch_finger_data {
     uint8_t index : 7;
 #endif
 };
+
+HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_ps4_touch_finger_data) == 1, "");
 
 struct hori_ps4_touch_data {
     uint8_t timestamp;
