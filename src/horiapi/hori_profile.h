@@ -114,7 +114,7 @@ struct hori_button_config {
     unsigned char linear_value;	//10
     struct hori_analog_config map_analog[2];			//14
 };
-_HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE , "");
+HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE , "");
 
 /** @brief Get value of key
 
