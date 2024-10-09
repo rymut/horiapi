@@ -84,7 +84,7 @@ _HORI_VA_ARGS_IS_EMPTY_IMPL(                                                    
 
 #define _HORI_STATIC_ASSERT(expr, ...) \
     struct _HORI_STATIC_ASSERT_MAKE_STRUCT_NAME(_HORI_STATIC_ASSERT_TYPE_PREFIX) { \
-        char _HORI_STATIC_ASSERT_MAKE_FIELD_NAME(expr, __VA_ARGS__): 8 + !(expr); \
+        int _HORI_STATIC_ASSERT_MAKE_FIELD_NAME(expr, __VA_ARGS__): sizeof(int) * 8 + !(expr); \
     }
 
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 202311L
