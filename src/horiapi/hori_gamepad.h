@@ -61,8 +61,10 @@ struct hori_ps4_touch_data {
  */
 struct hori_ps4_gamepad_report {
     /* -1 */ unsigned char report_id;
-    unsigned char left_stick[2];
-    unsigned char right_stick[2];
+    unsigned char left_stick_x;
+    unsigned char left_stick_y;
+    unsigned char right_stick_x;
+    unsigned char right_stick_y;
     struct hori_ps4_buttons {
         struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
@@ -104,20 +106,20 @@ struct hori_ps4_gamepad_report {
         };
         struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            unsigned char counter : 6;
-            unsigned char tpad : 1;
             unsigned char ps : 1;
+            unsigned char tpad : 1;
+            unsigned char counter : 6;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            unsigned char ps : 1;
-            unsigned char tpad : 1;
             unsigned char counter : 6;
+            unsigned char tpad : 1;
+            unsigned char ps : 1;
 #endif
         };
     } buttons;
     unsigned char left_trigger; // l2 analog
     unsigned char right_trigger; // r2 analog
     /* 9  */ uint16_t timestamp; // in 5.33us units?
-    /*11  */ uint8_t battery;
+    /*11  */ uint8_t temperature;
     /*12  */ int16_t angular_velocity_x;
     /*14  */ int16_t angular_velocity_y;
     /*16  */ int16_t angular_velocity_z;
@@ -135,7 +137,7 @@ struct hori_ps4_gamepad_report {
     /*30.2*/ uint8_t not_connected : 1; // Used by dongle to indicate no controller
     /*30.3*/ uint8_t Unk1 : 5;
     /*31  */ uint8_t Unk2; // unused?
-    /*32  */ uint8_t touch_ext_count;
+    /*32  */ uint8_t touch_count;
     struct hori_ps4_touch_data touch;
     struct hori_ps4_touch_data touch_ext[];
 };

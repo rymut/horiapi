@@ -126,6 +126,7 @@ int main_gamepad(int device_id, int wait_miliseconds) {
     }
     double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
     hori_clock_t start = hori_clock_now();
+    int previous_buttons = 0;
     for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
         // read gampade status
         int result = hori_read_gamepad_timeout(device, gamepad, 150);
@@ -133,16 +134,18 @@ int main_gamepad(int device_id, int wait_miliseconds) {
             printf("errror\n");
             break;
         }
-        int up = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_UP);
-        int left = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_LEFT);
-        int down = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_DOWN);
-        int right = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_RIGHT);
-        int buttons = hori_get_buttons(gamepad);
-        printf("gamepad ");
-        for (int i = 0; i < 31; i++) {
-            printf("%d ", (buttons & (1 << i)) != 0);
+        int buttons = hori_get_buttons(gamepad, 0);
+        if (buttons == -1) {
+            break;
         }
-        printf("\n");
+        if (previous_buttons != buttons) {
+            previous_buttons = buttons;
+            printf("gamepad ");
+            for (int i = 0; i < 31; i++) {
+                printf("%d ", (buttons & (1 << i)) != 0);
+            }
+            printf("\n");
+        }
     }
     hori_free_gamepad(gamepad);
     hori_close(device);

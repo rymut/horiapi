@@ -94,62 +94,65 @@ int hori_get_ps4_button(struct hori_ps4_gamepad_report* report, int button) {
     if (report == NULL) {
         return -1;
     }
-    switch (button) {
-    case HORI_PLAYSTATION_BUTTON_UP:
+    if (button <= 0 || (button & HORI_CONTROLLER_PLAYSTATION4) != HORI_CONTROLLER_PLAYSTATION4) {
+        return -1;
+    }
+
+    switch (HORI_BUTTON_INDEX(button)) {
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_UP):
         return report->buttons.hat_released == 0 && (hori_playstation_hat[report->buttons.hat_buttons & 7] & HORI_DPAD_UP) == HORI_DPAD_UP;
-    case HORI_PLAYSTATION_BUTTON_DOWN:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_DOWN):
         return report->buttons.hat_released == 0 && (hori_playstation_hat[report->buttons.hat_buttons & 7] & HORI_DPAD_DOWN) == HORI_DPAD_DOWN;
-    case HORI_PLAYSTATION_BUTTON_LEFT:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_LEFT):
         return report->buttons.hat_released == 0 && (hori_playstation_hat[report->buttons.hat_buttons & 7] & HORI_DPAD_LEFT) == HORI_DPAD_LEFT;
-    case HORI_PLAYSTATION_BUTTON_RIGHT:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_RIGHT):
         return report->buttons.hat_released == 0 && (hori_playstation_hat[report->buttons.hat_buttons & 7] & HORI_DPAD_RIGHT) == HORI_DPAD_RIGHT;
-    case HORI_PLAYSTATION_BUTTON_CREATE:
-    case HORI_PLAYSTATION_BUTTON_SHARE:
-        return report->buttons.options;
-    case HORI_PLAYSTATION_BUTTON_TOUCH_PAD:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_CREATE):
+        return report->buttons.share;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_TOUCH_PAD):
         return report->buttons.tpad;
-    case HORI_PLAYSTATION_BUTTON_OPTIONS:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_OPTIONS):
         return report->buttons.options;
-    case HORI_PLAYSTATION_BUTTON_CROSS:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_CROSS):
         return report->buttons.cross;
-    case HORI_PLAYSTATION_BUTTON_CIRCLE:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_CIRCLE):
         return report->buttons.circle;
-    case HORI_PLAYSTATION_BUTTON_TRIANGLE:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_TRIANGLE):
         return report->buttons.triangle;
-    case HORI_PLAYSTATION_BUTTON_SQUARE:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_SQUARE):
         return report->buttons.square;
-    case HORI_PLAYSTATION_BUTTON_RSTICK_UP:
-        return report->right_stick[0] > 128;
-    case HORI_PLAYSTATION_BUTTON_RSTICK_DOWN:
-        return report->right_stick[0] < 128;
-    case HORI_PLAYSTATION_BUTTON_RSTICK_LEFT:
-        return report->right_stick[1] < 128;
-    case HORI_PLAYSTATION_BUTTON_RSTICK_RIGHT:
-        return report->right_stick[1] > 128;
-    case HORI_PLAYSTATION_BUTTON_R3:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_RSTICK_UP):
+        return report->right_stick_x > 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_RSTICK_DOWN):
+        return report->right_stick_x < 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_RSTICK_LEFT):
+        return report->right_stick_y < 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_RSTICK_RIGHT):
+        return report->right_stick_y > 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_R3):
         return report->buttons.r3;
-    case HORI_PLAYSTATION_BUTTON_PLAYSTATION_PS:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_PLAYSTATION_PS):
         return report->buttons.ps;
-    case HORI_PLAYSTATION_BUTTON_PLAYSTATION_MUTE:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_PLAYSTATION_MUTE):
         // ??
         return -1;
-    case HORI_PLAYSTATION_BUTTON_LSTICK_UP:
-        return report->left_stick[0] > 128;
-    case HORI_PLAYSTATION_BUTTON_LSTICK_DOWN:
-        return report->left_stick[0] < 128;
-    case HORI_PLAYSTATION_BUTTON_LSTICK_LEFT:
-        return report->left_stick[1] < 128;
-    case HORI_PLAYSTATION_BUTTON_LSTICK_RIGHT:
-        return report->left_stick[1] > 128;
-    case HORI_PLAYSTATION_BUTTON_L3:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_LSTICK_UP):
+        return report->left_stick_x > 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_LSTICK_DOWN):
+        return report->left_stick_x < 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_LSTICK_LEFT):
+        return report->left_stick_y < 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_LSTICK_RIGHT):
+        return report->left_stick_y > 128;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_L3):
         return report->buttons.l3;
-    case HORI_PLAYSTATION_BUTTON_R1:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_R1):
         return report->buttons.r1;
-    case HORI_PLAYSTATION_BUTTON_R2:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_R2):
         return report->buttons.r2;
-    case HORI_PLAYSTATION_BUTTON_L1:
-        return report->buttons.r1;
-    case HORI_PLAYSTATION_BUTTON_L2:
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_L1):
+        return report->buttons.l1;
+    case HORI_BUTTON_INDEX(HORI_PLAYSTATION_BUTTON_L2):
         return report->buttons.l2;
     }
     return -1;
@@ -187,30 +190,35 @@ int HORI_API_CALL hori_get_button(hori_gamepad_t* gamepad, int button) {
     return -1;
 }
 
-int hori_get_ps4_buttons(struct hori_ps4_gamepad_report* report) {
+int hori_get_ps4_buttons(struct hori_ps4_gamepad_report* report, int group) {
     if (report == NULL) {
         return -1;
     }
+    int button_count = 0;
     int buttons = 0;
-    for (int button = HORI_PLAYSTATION_BUTTON_UP; button <= HORI_PLAYSTATION_BUTTON_L2; ++button) {
+    for (int button = 1; button < sizeof(int) * 8 - 1; ++button) {
         int bit_mask = HORI_BUTTON_BIT_MASK(button);
         if (bit_mask <= 0) {
             break;
         }
-        int state = hori_get_ps4_button(report, button);
+        int state = hori_get_ps4_button(report, HORI_CONTROLLER_PLAYSTATION4 | button);
+        button_count += (state != -1);
         if (state == 1) {
             buttons = buttons | bit_mask;
         }
     }
+    if (button_count == 0) {
+        return -1;
+    }
     return buttons;
 }
-int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad) {
+int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad, int index) {
     if (gamepad == NULL) {
         return -1;
     }
     switch (gamepad->device_controller) {
     case HORI_CONTROLLER_PLAYSTATION4:
-        return hori_get_ps4_buttons(&gamepad->report.ps4);
+        return hori_get_ps4_buttons(&gamepad->report.ps4, index);
     }
     return -1;
 }

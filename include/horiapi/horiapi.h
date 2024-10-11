@@ -52,13 +52,17 @@
 #define HORI_API_VERSION_STR HORI_API_TO_VERSION_STR(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
 
 
-/** @brief Get button bit index
+/** @brief Get button index *
  */
-#define HORI_BUTTON_BIT_INDEX(button) ((button-1)&0xFF)
+#define HORI_BUTTON_INDEX(button) (button > 0 ? (button & 0xFF) : 0)
 
-/** @brief Get button bit mask
- */
-#define HORI_BUTTON_BIT_MASK(button) (HORI_BUTTON_BIT_INDEX(button)>=(sizeof(int)*8-2)?-1:(1<<HORI_BUTTON_BIT_INDEX(button)))
+ /** @brief Get button bit index
+  */
+#define HORI_BUTTON_BIT_INDEX(button) ((button > 0 ? (HORI_BUTTON_INDEX(button)%(sizeof(int)*8-1))-1 : 0xFF) & 0xFF)
+
+  /** @brief Get button bit mask
+   */
+#define HORI_BUTTON_BIT_MASK(button) (HORI_BUTTON_BIT_INDEX(button)>=(sizeof(int)*8-1)?-1:(1<<HORI_BUTTON_BIT_INDEX(button)))
 
 #ifdef __cplusplus
 extern "C" {
@@ -556,8 +560,16 @@ extern "C" {
      */
     int HORI_API_CALL hori_get_button(hori_gamepad_t* gamepad, int button);
 
-    /** @brief Get button status */
-    int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad);
+    /** @brief Get button status
+
+        @summary
+            Buttons are returned in set of 31 bits
+
+        @returns
+            This function returns -1 on error or when index is not valid, button map otherwise
+      */
+
+    int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad, int index);
     /** @brief Get axis value
 
         @returns
