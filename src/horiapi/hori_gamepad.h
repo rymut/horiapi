@@ -26,11 +26,14 @@ struct hori_stick_value {
 };
 HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_stick_value) == 1, "");
 
+// xbox descriptior https://github.com/nefarius/ViGEmBus/issues/40
+// https://github.com/DJm00n/ControllersInfo/blob/master/dualsense/dualsense_hid_report_descriptor.txt - best resource
 // https://github.com/nondebug/dualsense
 struct hori_ps5_gamepad_report {
     unsigned char report_id;
 };
 
+// https://github.com/JibbSmart/JoyShockLibrary/blob/master/README.md
 // https://www.psdevwiki.com/ps4/DS4-USB
 // https://controllers.fandom.com/wiki/Sony_DualShock_4/Data_Structures
 struct hori_ps4_touch_finger_data {
@@ -64,7 +67,7 @@ struct hori_ps4_gamepad_report {
         struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
             unsigned char hat_buttons : 3;
-            unsigned char hat_center : 1;
+            unsigned char hat_released : 1;
             unsigned char square : 1;
             unsigned char cross : 1;
             unsigned char circle : 1;
@@ -74,7 +77,7 @@ struct hori_ps4_gamepad_report {
             unsigned char circle : 1;
             unsigned char cross : 1;
             unsigned char square : 1;
-            unsigned char hat_center : 1;
+            unsigned char hat_released : 1;
             unsigned char hat_buttons : 3;
 #endif 
         };
@@ -190,15 +193,21 @@ struct hori_config_gamepad_report {
     // offset 48
 };
 
+struct hori_xinput_gamepad_report {
+    unsigned char report_id;
+};
+
 struct hori_gamepad {
     // bit mapping for buttons
     int device_product;
-    int device_config_mode;
+    int device_controller;
     int device_state;
     int button_map[34]; // ?? how any buttons here
     union {
+        struct hori_xinput_gamepad_report xinput;
         struct hori_config_gamepad_report config;
         struct hori_ps4_gamepad_report ps4;
+        struct hori_ps5_gamepad_report ps5;
         uint8_t raw[64];
     } report;
 };
@@ -218,8 +227,12 @@ int hori_get_gamepad_button(struct hori_gamepad* gamepad, int button);
 int hori_get_gamepad_dpad(struct hori_gamepad* gamepad);
 
 enum hori_axis {
-    HORI_AXIS_LEFT_X,
-    HORI_AXIS_LEFT_Y,
+    HORI_AXIS_X,
+    HORI_AXIS_Y,
+    HORI_AXIS_Z,
+    HORI_AXIS_RX,
+    HORI_AXIS_RY,
+    HORI_AXIS_RZ,
     HORI_AXIS_LEFT_Z, // JAK OPISAC OSIE 
 
     HORI_ANALOG_Y_AXIS,

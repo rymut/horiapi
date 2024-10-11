@@ -51,6 +51,15 @@
 */
 #define HORI_API_VERSION_STR HORI_API_TO_VERSION_STR(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
 
+
+/** @brief Get button bit index
+ */
+#define HORI_BUTTON_BIT_INDEX(button) ((button-1)&0xFF)
+
+/** @brief Get button bit mask
+ */
+#define HORI_BUTTON_BIT_MASK(button) (HORI_BUTTON_BIT_INDEX(button)>=(sizeof(int)*8-2)?-1:(1<<HORI_BUTTON_BIT_INDEX(button)))
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -82,8 +91,8 @@ extern "C" {
      */
     enum hori_state {
         HORI_STATE_NONE = -1,
-        HORI_STATE_CONFIG = 1,
-        HORI_STATE_NORMAL = 2
+        HORI_STATE_CONFIG = 1,// HORI_CONTROLER_CONFIG
+        HORI_STATE_NORMAL = 2 // HORI_CONTROLLER_XINPUT | HORI_CONTROLLER_PS4 | PS5 
     };
 
     /** @brief Controller support
@@ -92,10 +101,11 @@ extern "C" {
         @since 0.1.0
       */
     enum hori_controller {
-        HORI_CONTROLLER_HID = 0,			// configuration option			
-        HORI_CONTROLLER_XINPUT,		// windows mode
-        HORI_CONTROLLER_PLAYSTATION4,	// playstation 4 mode
-        HORI_CONTROLLER_PLAYSTATION5,	// playstation 5 mode
+        HORI_CONTROLLER_HID = 0x000,			// HID option (BUTTON NUMBER in order)
+        HORI_CONTROLLER_CONFIG = 0x100,			// HORI numbers configuration option
+        HORI_CONTROLLER_XINPUT = 0x200,		    // windows mode
+        HORI_CONTROLLER_PLAYSTATION4 = 0x400,	// playstation 4 mode
+        HORI_CONTROLLER_PLAYSTATION5 = 0x800,	// playstation 5 mode
     };
 
     /** @brief Controller features
@@ -134,6 +144,82 @@ extern "C" {
         HORI_TURBO_NONE = 0,
     };
 
+    enum hori_xinput_button {
+        HORI_XINPUT_BUTTON_UP = HORI_CONTROLLER_XINPUT | 1,
+        HORI_XINPUT_BUTTON_DOWN = HORI_CONTROLLER_XINPUT | 2,
+        HORI_XINPUT_BUTTON_LEFT = HORI_CONTROLLER_XINPUT | 3,
+        HORI_XINPUT_BUTTON_RIGHT = HORI_CONTROLLER_XINPUT | 4,
+
+        HORI_XINPUT_BUTTON_BACK = HORI_CONTROLLER_XINPUT | 5,
+        HORI_XINPUT_BUTTON_GUIDE = HORI_CONTROLLER_XINPUT | 6,
+        HORI_XINPUT_BUTTON_HOME = HORI_XINPUT_BUTTON_GUIDE,
+        HORI_XINPUT_BUTTON_OPTIONS = HORI_CONTROLLER_XINPUT | 7,
+
+        HORI_XINPUT_BUTTON_A = HORI_CONTROLLER_XINPUT | 8,
+        HORI_XINPUT_BUTTON_B = HORI_CONTROLLER_XINPUT | 9,
+        HORI_XINPUT_BUTTON_Y = HORI_CONTROLLER_XINPUT | 10,
+        HORI_XINPUT_BUTTON_X = HORI_CONTROLLER_XINPUT | 11,
+
+        HORI_XINPUT_BUTTON_RSTICK_UP = HORI_CONTROLLER_XINPUT | 12,
+        HORI_XINPUT_BUTTON_RSTICK_DOWN = HORI_CONTROLLER_XINPUT | 13,
+        HORI_XINPUT_BUTTON_RSTICK_LEFT = HORI_CONTROLLER_XINPUT | 14,
+        HORI_XINPUT_BUTTON_RSTICK_RIGHT = HORI_CONTROLLER_XINPUT | 15,
+        HORI_XINPUT_BUTTON_RSTICK = HORI_CONTROLLER_XINPUT | 16,
+
+        HORI_XINPUT_BUTTON_LSTICK_UP = HORI_CONTROLLER_XINPUT | 17,
+        HORI_XINPUT_BUTTON_LSTICK_DOWN = HORI_CONTROLLER_XINPUT | 18,
+        HORI_XINPUT_BUTTON_LSTICK_LEFT = HORI_CONTROLLER_XINPUT | 19,
+        HORI_XINPUT_BUTTON_LSTICK_RIGHT = HORI_CONTROLLER_XINPUT | 20,
+        HORI_XINPUT_BUTTON_LSTICK = HORI_CONTROLLER_XINPUT | 21,
+
+        HORI_XINPUT_BUTTON_RBUMPER = HORI_CONTROLLER_XINPUT | 22,
+        HORI_XINPUT_BUTTON_RTRIGGER = HORI_CONTROLLER_XINPUT | 23,
+
+        HORI_XINPUT_BUTTON_LBUMPER = HORI_CONTROLLER_XINPUT | 24,
+        HORI_XINPUT_BUTTON_LTRIGGER = HORI_CONTROLLER_XINPUT | 25,
+
+    };
+
+    // https://www.playstation.com/en-us/support/hardware/ps5-button-functions/
+    enum hori_playstation_button {
+        HORI_PLAYSTATION_BUTTON_UP = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 1,
+        HORI_PLAYSTATION_BUTTON_DOWN = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 2,
+        HORI_PLAYSTATION_BUTTON_LEFT = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 3,
+        HORI_PLAYSTATION_BUTTON_RIGHT = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 4,
+
+        HORI_PLAYSTATION_BUTTON_CREATE = HORI_CONTROLLER_PLAYSTATION5 | 5, // options ps5
+        HORI_PLAYSTATION_BUTTON_SHARE = HORI_CONTROLLER_PLAYSTATION4 | 5, // share (ps4)
+        HORI_PLAYSTATION_BUTTON_TOUCH_PAD = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 6,
+        HORI_PLAYSTATION_BUTTON_OPTIONS = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 7,
+
+        HORI_PLAYSTATION_BUTTON_CROSS = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 8,
+        HORI_PLAYSTATION_BUTTON_CIRCLE = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 9,
+        HORI_PLAYSTATION_BUTTON_TRIANGLE = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 10,
+        HORI_PLAYSTATION_BUTTON_SQUARE = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 11,
+
+        HORI_PLAYSTATION_BUTTON_RSTICK_UP = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 12,
+        HORI_PLAYSTATION_BUTTON_RSTICK_DOWN = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 13,
+        HORI_PLAYSTATION_BUTTON_RSTICK_LEFT = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 14,
+        HORI_PLAYSTATION_BUTTON_RSTICK_RIGHT = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 15,
+        HORI_PLAYSTATION_BUTTON_R3 = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 16,
+
+        HORI_PLAYSTATION_BUTTON_PLAYSTATION_PS = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 17,
+        HORI_PLAYSTATION_BUTTON_PLAYSTATION_MUTE = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 18,
+
+        HORI_PLAYSTATION_BUTTON_LSTICK_UP = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 19,
+        HORI_PLAYSTATION_BUTTON_LSTICK_DOWN = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 20,
+        HORI_PLAYSTATION_BUTTON_LSTICK_LEFT = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 21,
+        HORI_PLAYSTATION_BUTTON_LSTICK_RIGHT = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 22,
+        HORI_PLAYSTATION_BUTTON_L3 = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 23,
+
+        HORI_PLAYSTATION_BUTTON_R1 = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 24,
+        HORI_PLAYSTATION_BUTTON_R2 = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 25,
+
+        HORI_PLAYSTATION_BUTTON_L1 = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 26,
+        HORI_PLAYSTATION_BUTTON_L2 = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 27,
+
+
+    };
     /** @brief Hori button used for mapping */
     enum hori_button {
         HORI_BUTTON_UP = 1,
@@ -223,9 +309,9 @@ extern "C" {
         /** @brief Firmware name (in firmware) */
         char firmware_name[16];
         /** @brief Product type */
-        hori_product_t product : 8;
+        hori_product_t product : 16;
         /** @brief Device config mode or auto */
-        enum hori_controller device_config_mode : 8;
+        enum hori_controller device_config_mode : 16;
         /** @brief Normal mode HID device product id */
         unsigned short hid_normal_product_id;
         /** @brief Config mode HID device product id */
@@ -458,6 +544,53 @@ extern "C" {
      */
     int HORI_API_CALL hori_read_gamepad(hori_device_t* device, hori_gamepad_t* gamepad);
     int HORI_API_CALL hori_read_gamepad_timeout(hori_device_t* device, hori_gamepad_t* gamepad, int miliseconds);
+
+    /** @brief Check if button is pressed
+
+        @param gamepad The gamepad handle
+        @param button The button id
+
+        @returns
+            This function returns -1 if button is not present on gamepad, otherwise
+            function returs 1 if button is pressed and 0 if not.
+     */
+    int HORI_API_CALL hori_get_button(hori_gamepad_t* gamepad, int button);
+
+    /** @brief Get button status */
+    int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad);
+    /** @brief Get axis value
+
+        @returns
+            This function return -1 if axis is not present on gamepad, otherwise
+            value between 0..<max-value> for axis
+      */
+      //
+      // value 0 - min
+      // value (max-min)/2 - zero
+      // value uint16_t - max
+    int HORI_API_CALL hori_get_axis(hori_gamepad_t* gamepad, int axis, int prop);
+    //https://blog.the.al/2023/01/01/ds4-reverse-engineering.html
+    int HORI_API_CALL hori_get_touch_count(hori_gamepad_t* gamepad);
+    /** */
+    int HORI_API_CALL hori_touch(hori_gamepad_t* gamepad, int touch, int prop);
+
+    enum hori_sensor_property {
+        HORI_SENSOR_VALUE = 0,
+        HORI_SENSOR_ZERO,
+        HORI_SENSOR_NORM, // value for normalization
+        HORI_SENSOR_UNIT, // units of value
+    };
+    enum hori_unit {
+        HORI_UNIT_NORMALIZED,
+        HORI_UNIT_SIGNED_NORMALIZED,
+        HORI_UNIT_ACCEL_VELOCITY,
+        HORI_UNIT_GROY_ROTATION_DEEGRESS_PER_SECOND,
+    };
+
+    // https://github.com/JibbSmart/JoyShockLibrary/blob/master/JoyShockLibrary/InputHelpers.cpp
+    /** @brief Get sensor value
+     */
+    int HORI_API_CALL hori_sensor(hori_gamepad_t* gamepad, int sensor, int prop);
     /** @brief Handle to hori profile
 
         @ingroup API
@@ -515,7 +648,7 @@ extern "C" {
             This function requires device to be in @see HORI_STATE_CONFIG.
             The @p profile was acquired by @see hori_get_profile it should not be released by the user.
     */
-    int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t *profile);
+    int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t* profile);
 
     /** @brief Get profile name */
     char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile);

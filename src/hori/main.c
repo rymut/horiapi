@@ -133,7 +133,16 @@ int main_gamepad(int device_id, int wait_miliseconds) {
             printf("errror\n");
             break;
         }
-        printf("read gamepad report %d\n", result);
+        int up = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_UP);
+        int left = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_LEFT);
+        int down = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_DOWN);
+        int right = hori_get_button(gamepad, HORI_PLAYSTATION_BUTTON_RIGHT);
+        int buttons = hori_get_buttons(gamepad);
+        printf("gamepad ");
+        for (int i = 0; i < 31; i++) {
+            printf("%d ", (buttons & (1 << i)) != 0);
+        }
+        printf("\n");
     }
     hori_free_gamepad(gamepad);
     hori_close(device);
