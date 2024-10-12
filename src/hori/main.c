@@ -111,10 +111,10 @@ int main_gamepad(int device_id, int wait_miliseconds) {
         printf("cannot open device %d\n", device_id);
         return EXIT_FAILURE;
     }
-    if (hori_get_state(device) != HORI_STATE_NORMAL) {
-        hori_set_state(device, HORI_STATE_NORMAL);
+    if (hori_get_state(device) != HORI_STATE_CONFIG) {
+        hori_set_state(device, HORI_STATE_CONFIG);
     }
-    if (hori_get_state(device) != HORI_STATE_NORMAL) {
+    if (hori_get_state(device) != HORI_STATE_CONFIG) {
         hori_close(device);
         return EXIT_FAILURE;
     }
@@ -129,6 +129,9 @@ int main_gamepad(int device_id, int wait_miliseconds) {
     int previous_buttons = 0;
     for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
         // read gampade status
+        if (hori_get_state(device) == HORI_STATE_CONFIG) {
+            hori_send_heartbeat(device);
+        }
         int result = hori_read_gamepad_timeout(device, gamepad, 150);
         if (result == -1) {
             printf("errror\n");

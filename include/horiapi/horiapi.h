@@ -106,7 +106,7 @@ extern "C" {
       */
     enum hori_controller {
         HORI_CONTROLLER_HID = 0x000,			// HID option (BUTTON NUMBER in order)
-        HORI_CONTROLLER_CONFIG = 0x100,			// HORI numbers configuration option
+        HORI_CONTROLLER_CONFIG = 0x000,			// HORI numbers configuration option
         HORI_CONTROLLER_XINPUT = 0x200,		    // windows mode
         HORI_CONTROLLER_PLAYSTATION4 = 0x400,	// playstation 4 mode
         HORI_CONTROLLER_PLAYSTATION5 = 0x800,	// playstation 5 mode

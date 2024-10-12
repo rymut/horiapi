@@ -150,26 +150,51 @@ struct hori_config_gamepad_report {
 
     struct hori_stick_value left_stick;		// 2 - x/y
     struct hori_stick_value right_stick;		// 2 - z/rz
-    struct hori_buttons {
+    struct hori_config_buttons {
         struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            unsigned char hat_buttons : 3;
+            unsigned char hat_released : 1;
+            unsigned char square : 1;
+            unsigned char cross : 1;
+            unsigned char circle : 1;
+            unsigned char triangle : 1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             unsigned char triangle : 1;
             unsigned char circle : 1;
             unsigned char cross : 1;
             unsigned char square : 1;
-            unsigned char hat_center : 1;
+            unsigned char hat_released : 1;
             unsigned char hat_buttons : 3;
+#endif 
         };
-        // depends on controller mapping
+        // just use byte lookup table in example
+        // byte_index[button]
+        //  bit_index[button]
+        // for NSW326 - share & options are reversed
         struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            unsigned char l1 : 1;
+            unsigned char r1 : 1;
+            unsigned char l2 : 1;
+            unsigned char r2 : 1;
+            unsigned char share : 1;
+            unsigned char options : 1;
+            unsigned char l3 : 1;
+            unsigned char r3 : 1;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
             unsigned char r3 : 1;
             unsigned char l3 : 1;
-            unsigned char Options : 1;
-            unsigned char Share : 1;
+            unsigned char options : 1;
+            unsigned char share : 1;
             unsigned char r2 : 1;
             unsigned char l2 : 1;
             unsigned char r1 : 1;
             unsigned char l1 : 1;
+#endif
         };
+        // next two bytes changes for NSW326 / SD2112 / PC2161
+
         struct {
             unsigned char fr1 : 1; // trigger right
             unsigned char fl1 : 1;	// trigger left
@@ -205,7 +230,7 @@ struct hori_gamepad {
     int device_controller;
     int device_state;
     int button_map[34]; // ?? how any buttons here
-    union {
+    union hori_gamepad_report {
         struct hori_xinput_gamepad_report xinput;
         struct hori_config_gamepad_report config;
         struct hori_ps4_gamepad_report ps4;
