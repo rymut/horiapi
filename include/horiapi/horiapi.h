@@ -67,24 +67,24 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
     /** Hori products
 
         @since 0.1.0
       */
     enum hori_product {
         HORI_PRODUCT_ANY = 0, // hori device but might be unsupported
-        HORI_PRODUCT_SPF_021,
-        HORI_PRODUCT_SPF_004,
-        HORI_PRODUCT_SPF_022,
-        HORI_PRODUCT_SPF_023,
-        HORI_PRODUCT_NSW326,
-        HORI_PRODUCT_SD2112,
+        HORI_PRODUCT_SPF_021, // profile, mapping
+        HORI_PRODUCT_SPF_004, // profile, mapping, wheel,podels 
+        HORI_PRODUCT_SPF_022, // profil, key, wheel, pedals
+        HORI_PRODUCT_SPF_023, // profile, mapping, dpad
+        HORI_PRODUCT_NSW326,  // profile, mapping, left stick, right stick, sensor
+        HORI_PRODUCT_SD2112, // profil, mapping, wheel, pedals
         HORI_PRODUCT_SD2113,
         HORI_PRODUCT_SD2115,
-        HORI_PRODUCT_HPC043_WHEEL,
-        HORI_PRODUCT_HPC043_PANEL,
-        HORI_PRODUCT_PC2161
-
+        HORI_PRODUCT_HPC043_WHEEL, // wheel, pedals
+        HORI_PRODUCT_HPC043_PANEL, // wheel
+        HORI_PRODUCT_PC2161 // profile, mapping, dpad
     };
     typedef enum hori_product hori_product_t;
 
@@ -130,6 +130,10 @@ extern "C" {
         HORI_FEATURE_LEFT_STICK = 16,
         /** @brief Controller supports right stick */
         HORI_FEATURE_RIGHT_STICK = 32,
+        /** @brief Controller support dpad */
+        HORI_FEATURE_DIRECTIONAL_PAD = 64,
+        /** @brief Controller support for wheel */
+        HORI_FEATURE_WHEEL = 128, 
     };
 
     /** @brief Hori stick definitions
