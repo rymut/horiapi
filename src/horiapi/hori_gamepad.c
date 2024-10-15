@@ -51,7 +51,7 @@ int hori_function_dpad(int dpad, int directions) {
 enum hori_function_axis {
     HORI_ARG_AXIS_BINARIZE = 1, // return 0 or 1 on value for non zero value
     HORI_ARG_AXIS_REVERSED = 2, // value from high to low (255 relesead, 0 pressed) otherwise (0, 255)
-    HORI_ARG_AXIS_SIGNED = 3, // axis returns signed value (half point is 0) so for 8 bits half value is 1<<(8-1) - this value is substracted from RAW
+    HORI_ARG_AXIS_SIGNED = 4, // axis returns signed value (half point is 0) so for 8 bits half value is 1<<(8-1) - this value is substracted from RAW
 };
 
 /** @brief Get Axis value
@@ -107,13 +107,13 @@ struct hori_lookup {
 struct hori_lookup hori_config_generic_gamepad_lookup[] = {
     HORI_MAKE_LOOKUP_NONE(),
     // HORI_BUTTON_UP = 1
-    HORI_MAKE_LOOKUP_DPAD(5, 4, HORI_DPAD_UP),
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_UP),
     // HORI_BUTTON_DOWN = 2,
-    HORI_MAKE_LOOKUP_DPAD(5, 4, HORI_DPAD_DOWN),
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_DOWN),
     // HORI_BUTTON_LEFT = 3,
-    HORI_MAKE_LOOKUP_DPAD(5, 4, HORI_DPAD_LEFT),
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_LEFT),
     // HORI_BUTTON_RIGHT = 4,
-    HORI_MAKE_LOOKUP_DPAD(5, 4, HORI_DPAD_RIGHT),
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_RIGHT),
     // HORI_BUTTON_L1 = 6,
     HORI_MAKE_LOOKUP_BUTTON(6, 0),
     // HORI_BUTTON_R1 = 6,
@@ -155,21 +155,21 @@ struct hori_lookup hori_config_generic_gamepad_lookup[] = {
     // HORI_BUTTON_CAMERA = 24,
     HORI_MAKE_LOOKUP_BUTTON(7, 1),
     // HORI_BUTTON_LSTICK_UP = 25,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.x), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_LSTICK_DOWN = 26,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.x), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_LSTICK_LEFT = 27,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.y), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_LSTICK_RIGHT = 28,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.y), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_RSTICK_UP = 29,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.x), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_RSTICK_DOWN = 30,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.x), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_RSTICK_LEFT = 31,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.y), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_RSTICK_RIGHT = 32,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.y), 0, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_LAGILE = 33,
     HORI_MAKE_LOOKUP_NONE(),
     // HORI_BUTTON_LTARGET = 34,

@@ -145,7 +145,11 @@ int main_gamepad(int device_id, int wait_miliseconds) {
             previous_buttons = buttons;
             printf("gamepad ");
             for (int i = 0; i < 31; i++) {
+                if (i % 8 == 0) {
+                    printf(" ");
+                }
                 printf("%d ", (buttons & (1 << i)) != 0);
+               
             }
             printf("\n");
         }

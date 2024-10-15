@@ -2,6 +2,8 @@
 
 #include <assert.h>
 
+#include "hori_macros.h"
+
 #if defined(HORI_DOXYGEN)
 /** @brief Compile time assertion
 

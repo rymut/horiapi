@@ -26,12 +26,12 @@ void HORI_ALIGNOF(type_name);
 #define HORI_ALIGNOF(type_name) _Alignof(type_name)
 #else
 #if defined(_HORI_UNIQUE_INDEX)
-#define HORI_ALIGNOF(type_name) (sizeof( \
+#define HORI_ALIGNOF(type_name) ((sizeof( \
     struct _HORI_CONCAT(_hori_alignof_, _HORI_UNIQUE_INDEX) { \
         char prefix; \
         type_name value; \
         char suffix; \
-    })/3)
+    }) - sizeof(type_name))/2)
 #else
 /* Will work but will generate warning on some compilers */
 #define HORI_ALIGNOF(type_name) (sizeof( \

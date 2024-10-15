@@ -40,16 +40,16 @@ struct hori_ps4_touch_finger_data {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     uint8_t index : 7;
     uint8_t no_touch : 1;
-    uint16_t x : 12;
-    uint16_t y : 12;
+    // bit of black magic
+    uint8_t xy[3];
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    uint16_t y : 12;
-    uint16_t x : 12;
+    uint8_t yx[3];
     uint8_t no_touch : 1;
     uint8_t index : 7;
 #endif
 };
 
+HORI_STATIC_ASSERT(sizeof(struct hori_ps4_touch_finger_data) == 4, "");
 HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_ps4_touch_finger_data) == 1, "");
 
 struct hori_ps4_touch_data {
@@ -57,15 +57,18 @@ struct hori_ps4_touch_data {
     struct hori_ps4_touch_finger_data finger[2];
 };
 
+HORI_STATIC_ASSERT(sizeof(struct hori_ps4_touch_data) == 9, "");
+HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_ps4_touch_data) == 1, "");
+
 struct hori_ps4_extra_data {
-    uint16_t timestamp; // in 5.33us units?
+    uint8_t timestamp[2]; // in 5.33us units?
     uint8_t temperature;
-    int16_t angular_velocity_x;
-    int16_t angular_velocity_y;
-    int16_t angular_velocity_z;
-    int16_t accelerometer_x;
-    int16_t accelerometer_y;
-    int16_t accelerometer_z;
+    uint8_t angular_velocity_x[2];
+    uint8_t angular_velocity_y[2];
+    uint8_t angular_velocity_z[2];
+    uint8_t accelerometer_x[2];
+    uint8_t accelerometer_y[2];
+    uint8_t accelerometer_z[2];
     uint8_t ext_data[5]; // range can be set by EXT device
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     uint8_t power_percent : 4; // 0x00-0x0A or 0x01-0x0B if plugged int
@@ -98,6 +101,10 @@ struct hori_ps4_extra_data {
     uint8_t Unk2; // unused?
     uint8_t touch_count;
 };
+
+HORI_STATIC_ASSERT(sizeof(struct hori_ps4_extra_data) == 24, "");
+HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_ps4_extra_data) == 1, "");
+
 /** @brief PS4 buttons structure
  */
 struct hori_ps4_gamepad_report {
@@ -268,7 +275,9 @@ struct hori_config_generic_gamepad_report {
     struct hori_linear_value right_trigger;			// 1 Ry 
     // offset 11
     struct hori_ps4_extra_data extra;
-    struct hori_ps4_touch_data touch;
+    struct {
+        struct hori_ps4_touch_finger_data finger[2];
+    } touch;
     // offset 43
     unsigned short wheel;		// 2 // le
     // offset 44
@@ -277,6 +286,7 @@ struct hori_config_generic_gamepad_report {
     unsigned short right_pedal;	// 2 // 65535 - le
     // offset 48
 };
+
 
 /** @brief Describe hori gamepad report when controller is in HORI_STATE_CONFIG state
  */
@@ -356,7 +366,9 @@ struct hori_config_spf023_gamepad_report {
     struct hori_linear_value right_trigger;			// 1 Ry 
     // offset 10
     struct hori_ps4_extra_data extra;
-    struct hori_ps4_touch_data touch;
+    struct {
+        struct hori_ps4_touch_finger_data finger[2];
+    } touch;
     // offset 42
     unsigned short wheel;		// 2 // le
     unsigned short left_pedal;	// 2 // 65535 - le
