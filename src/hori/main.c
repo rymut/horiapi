@@ -119,14 +119,14 @@ int main_gamepad(int device_id, int wait_miliseconds) {
         return EXIT_FAILURE;
     }
 
-    hori_gamepad_t *gamepad = hori_make_gamepad();
+    hori_gamepad_t* gamepad = hori_make_gamepad();
     if (gamepad == NULL) {
         hori_close(device);
         return EXIT_FAILURE;
     }
     double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
     hori_clock_t start = hori_clock_now();
-    int previous_buttons = 0;
+    long long previous_buttons = 0;
     for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
         // read gampade status
         if (hori_get_state(device) == HORI_STATE_CONFIG) {
@@ -141,15 +141,19 @@ int main_gamepad(int device_id, int wait_miliseconds) {
         if (buttons == -1) {
             break;
         }
-        if (previous_buttons != buttons) {
-            previous_buttons = buttons;
+        long long allbuttons = buttons;
+        buttons = hori_get_buttons(gamepad, 1);
+        if (buttons != -1) {
+            allbuttons = (allbuttons << sizeof(int) * 8) | buttons;
+        }
+        if (previous_buttons != allbuttons) {
+            previous_buttons = allbuttons;
             printf("gamepad ");
-            for (int i = 0; i < 31; i++) {
+            for (int i = 0; i < sizeof(allbuttons) * 8 - 1; i++) {
                 if (i % 8 == 0) {
                     printf(" ");
                 }
-                printf("%d ", (buttons & (1 << i)) != 0);
-               
+                printf("%d ", (allbuttons & (1LL << i)) != 0);
             }
             printf("\n");
         }
@@ -182,8 +186,8 @@ int main(int argc, char** argv)
     // syntax: [-h,--help] [-v,--version]
     struct arg_lit* main_help = ARG_HELP();
     struct arg_lit* main_version = arg_lit0("v", "version", "show version");
-    struct arg_end *main_end = arg_end(2);
-    void *main_argtable[] = { main_help, main_version, main_end };
+    struct arg_end* main_end = arg_end(2);
+    void* main_argtable[] = { main_help, main_version, main_end };
     int main_errors = 0;
 
     // syntax: list [-h,--help]

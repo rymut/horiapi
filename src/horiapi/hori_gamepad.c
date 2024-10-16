@@ -123,7 +123,7 @@ struct hori_lookup hori_config_generic_gamepad_lookup[] = {
     // HORI_BUTTON_R3 = 8,
     HORI_MAKE_LOOKUP_BUTTON(6, 7),
     // HORI_BUTTON_FL1 = 9,
-    HORI_MAKE_LOOKUP_BUTTON(7,2),
+    HORI_MAKE_LOOKUP_BUTTON(7, 2),
     // HORI_BUTTON_FL2 = 10,
     HORI_MAKE_LOOKUP_NONE(),
     // HORI_BUTTON_FR1 = 11,
@@ -143,9 +143,9 @@ struct hori_lookup hori_config_generic_gamepad_lookup[] = {
     // HORI_BUTTON_TRIANGLE = 18,
     HORI_MAKE_LOOKUP_BUTTON(5, 7),
     // HORI_BUTTON_LPEDAL = 19,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_pedal), 0, 16, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_pedal), 0, 16, HORI_ARG_AXIS_BINARIZE),
     // HORI_BUTTON_RPEDAL = 20,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_pedal), 0, 16, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_pedal), 0, 16, HORI_ARG_AXIS_BINARIZE),
     // HORI_BUTTON_PLAYSTATION = 21,
     HORI_MAKE_LOOKUP_BUTTON(7, 0),
     // HORI_BUTTON_SELECT = 22,
@@ -155,26 +155,130 @@ struct hori_lookup hori_config_generic_gamepad_lookup[] = {
     // HORI_BUTTON_CAMERA = 24,
     HORI_MAKE_LOOKUP_BUTTON(7, 1),
     // HORI_BUTTON_LSTICK_UP = 25,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_LSTICK_DOWN = 26,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_LSTICK_LEFT = 27,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_LSTICK_RIGHT = 28,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_RSTICK_UP = 29,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_RSTICK_DOWN = 30,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_RSTICK_LEFT = 31,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
     // HORI_BUTTON_RSTICK_RIGHT = 32,
-    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_spf023_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
     // HORI_BUTTON_LAGILE = 33,
     HORI_MAKE_LOOKUP_NONE(),
     // HORI_BUTTON_LTARGET = 34,
     HORI_MAKE_LOOKUP_NONE(),
+    // HORI_BUTTON_SHARE = 35,
+    HORI_MAKE_LOOKUP_BUTTON(6, 4),
+    // HORI_BUTTON_OPTIONS = 35,
+    HORI_MAKE_LOOKUP_BUTTON(6, 5),
+
 };
+
+/** @brief Hori Nintendo Switch FPS gamepad config report (NSW326)
+
+    @note
+        This lookup differs from generic:
+            (s.FL1 = n(7, 3),
+                            s.FR1 = n(7, 4),
+                            s.Lagile = n(7, 5),
+                            s.Ltarget = n(7, 6),
+                            s.FL2 = n(7, 7),
+                            s.Options = n(6, 4), // different values
+                            s.Share = n(6, 5),   // different values
+                            s.RealA = n(8, 0),
+                            s.RealB = n(8, 1))
+ */
+struct hori_lookup hori_config_nsw326_gamepad_lookup[] = {
+    HORI_MAKE_LOOKUP_NONE(),
+    // HORI_BUTTON_UP = 1
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_UP),
+    // HORI_BUTTON_DOWN = 2,
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_DOWN),
+    // HORI_BUTTON_LEFT = 3,
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_LEFT),
+    // HORI_BUTTON_RIGHT = 4,
+    HORI_MAKE_LOOKUP_DPAD(5, 3, HORI_DPAD_RIGHT),
+    // HORI_BUTTON_L1 = 6,
+    HORI_MAKE_LOOKUP_BUTTON(6, 0),
+    // HORI_BUTTON_R1 = 6,
+    HORI_MAKE_LOOKUP_BUTTON(6, 1),
+    // HORI_BUTTON_L3 = 7,
+    HORI_MAKE_LOOKUP_BUTTON(6, 6),
+    // HORI_BUTTON_R3 = 8,
+    HORI_MAKE_LOOKUP_BUTTON(6, 7),
+    // HORI_BUTTON_FL1 = 9,
+    HORI_MAKE_LOOKUP_BUTTON(7, 2),  // 7, 3
+    // HORI_BUTTON_FL2 = 10,
+    HORI_MAKE_LOOKUP_NONE(),    // 7, 7
+    // HORI_BUTTON_FR1 = 11,
+    HORI_MAKE_LOOKUP_BUTTON(7, 3), // 7, 4
+    // HORI_BUTTON_FR2 = 12,
+    HORI_MAKE_LOOKUP_NONE(),
+    // HORI_BUTTON_L2 = 13,
+    HORI_MAKE_LOOKUP_BUTTON(6, 2),
+    // HORI_BUTTON_R2 = 14,
+    HORI_MAKE_LOOKUP_BUTTON(6, 3),
+    // HORI_BUTTON_CROSS = 15,
+    HORI_MAKE_LOOKUP_BUTTON(5, 5),
+    // HORI_BUTTON_CIRCLE = 16,
+    HORI_MAKE_LOOKUP_BUTTON(5, 6),
+    // HORI_BUTTON_SQUARE = 17,
+    HORI_MAKE_LOOKUP_BUTTON(5, 4),
+    // HORI_BUTTON_TRIANGLE = 18,
+    HORI_MAKE_LOOKUP_BUTTON(5, 7),
+    // HORI_BUTTON_LPEDAL = 19,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_pedal), 0, 16, HORI_ARG_AXIS_BINARIZE),
+    // HORI_BUTTON_RPEDAL = 20,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_pedal), 0, 16, HORI_ARG_AXIS_BINARIZE),
+    // HORI_BUTTON_PLAYSTATION = 21,
+    HORI_MAKE_LOOKUP_BUTTON(7, 0),
+    // HORI_BUTTON_SELECT = 22,
+    HORI_MAKE_LOOKUP_BUTTON(8, 1),
+    // HORI_BUTTON_START = 23,
+    HORI_MAKE_LOOKUP_BUTTON(8, 0),
+    // HORI_BUTTON_CAMERA = 24,
+    HORI_MAKE_LOOKUP_BUTTON(7, 1),
+    // HORI_BUTTON_LSTICK_UP = 25,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    // HORI_BUTTON_LSTICK_DOWN = 26,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    // HORI_BUTTON_LSTICK_LEFT = 27,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    // HORI_BUTTON_LSTICK_RIGHT = 28,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, left_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    // HORI_BUTTON_RSTICK_UP = 29,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    // HORI_BUTTON_RSTICK_DOWN = 30,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.x), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    // HORI_BUTTON_RSTICK_LEFT = 31,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED | HORI_ARG_AXIS_REVERSED),
+    // HORI_BUTTON_RSTICK_RIGHT = 32,
+    HORI_MAKE_LOOKUP_AXIS(offsetof(struct hori_config_generic_gamepad_report, right_stick.y), 7, 8, HORI_ARG_AXIS_BINARIZE | HORI_ARG_AXIS_SIGNED),
+    // HORI_BUTTON_LAGILE = 33,
+    HORI_MAKE_LOOKUP_NONE(),    // 7, 5
+    // HORI_BUTTON_LTARGET = 34,
+    HORI_MAKE_LOOKUP_NONE(),    // 7, 6
+};
+
+/** @brief controllers differs only by real field
+
+xt.Values.ProductType.SD2112 || t == xt.Values.ProductType.PC2161 ? (
+                            s.RealA = n(8, 1),
+                            s.RealB = n(8, 0))
+                            */
+struct hori_lookup hori_config_sd2112_gamepad_lookup[] = {};
+
+/** @brief PC2161 is identical to SD2112
+ */
+#define hori_config_pc2161_gamepad_lookup hori_config_sd2112_gamepad_lookup
+
 
 hori_gamepad_t* HORI_API_CALL hori_make_gamepad() {
     return (hori_gamepad_t*)calloc(1, sizeof(hori_gamepad_t));
@@ -518,9 +622,14 @@ int hori_get_controller_buttons(union hori_gamepad_report* report, int group, in
     if (get_controller_button == NULL) {
         return -1;
     }
+    if (group < 0) {
+        return -1;
+    }
     int button_count = 0;
     int buttons = 0;
-    for (int button = 1; button < sizeof(int) * 8 - 1; ++button) {
+    int groupStart = group == 0 ? 1 : (group * sizeof(int) * 8 - 2);
+    int groupEnd = groupStart + sizeof(int) * 8 - 1;
+    for (int button = groupStart; button < groupEnd; ++button) {
         int bit_mask = HORI_BUTTON_BIT_MASK(button);
         if (bit_mask <= 0) {
             break;

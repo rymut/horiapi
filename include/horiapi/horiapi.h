@@ -274,6 +274,10 @@ extern "C" {
         HORI_BUTTON_LAGILE = 33,
         HORI_BUTTON_LTARGET = 34,
 
+        // COSTOM BUT NOT MAPPED
+        HORI_BUTTON_SHARE = 35,
+        HORI_BUTTON_OPTIONS = 35,
+        // DISABLE MAPPING
         HORI_BUTTON_DISABLED = 255
     };
 
