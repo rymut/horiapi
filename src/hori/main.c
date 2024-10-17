@@ -164,6 +164,13 @@ int main_gamepad(int device_id, int wait_miliseconds) {
     return EXIT_SUCCESS;
 }
 
+#include "hori_yaml.h"
+
+int main_validate(const char *input_file) {
+    hori_yaml_parse_file(input_file);
+    return EXIT_SUCCESS;
+}
+
 #define ARG_CMD(cmd) arg_rex1(NULL, NULL, cmd, NULL, REG_ICASE, NULL);
 #define ARG_HELP() arg_lit0("h", "help", "show help message")
 #define ARG_DEVICE() arg_int1("d", "device", "<device>", "device number")
@@ -237,6 +244,13 @@ int main(int argc, char** argv)
     void* gamepad_argtable[] = { gamepad_cmd, gamepad_help, gamepad_device, gamepad_wait, gamepad_end };
     int gamepad_errors = 0;
 
+    struct arg_rex* validate_cmd = ARG_CMD("validate");
+    struct arg_lit* validate_help = ARG_HELP();
+    struct arg_file* validate_input = ARG_INPUT();
+    struct arg_end* validate_end = arg_end(20);
+    void* validate_argtable[] = { validate_cmd, validate_help, validate_input, validate_end };
+    int validate_errors = 0;
+
     int exitcode = EXIT_SUCCESS;
 
     if (arg_nullcheck(main_argtable) != 0 ||
@@ -244,7 +258,8 @@ int main(int argc, char** argv)
         arg_nullcheck(get_argtable) != 0 ||
         arg_nullcheck(set_argtable) != 0 ||
         arg_nullcheck(test_argtable) != 0 ||
-        arg_nullcheck(gamepad_argtable))
+        arg_nullcheck(gamepad_argtable) ||
+        arg_nullcheck(validate_argtable))
     {
         printf("%s: insufficient memory\n", progname);
         exitcode = 1;
@@ -263,7 +278,7 @@ int main(int argc, char** argv)
     set_errors = arg_parse(argc, argv, set_argtable);
     test_errors = arg_parse(argc, argv, test_argtable);
     gamepad_errors = arg_parse(argc, argv, gamepad_argtable);
-
+    validate_errors = arg_parse(argc, argv, validate_argtable);
     /* Execute the appropriate main<n> routine for the matching command line syntax */
     /* In this example program our alternate command line syntaxes are mutually     */
     /* exclusive, so we know in advance that only one of them can be successful.    */
@@ -305,6 +320,14 @@ int main(int argc, char** argv)
         }
         else {
             exitcode = main_gamepad(*test_device->ival, *test_wait->ival);
+        }
+    }
+    else if (validate_errors == 0) {
+        if (validate_help->count) {
+            printf("show validate help\n");
+        }
+        else {
+            exitcode = main_validate(validate_input->filename[0]);
         }
     }
     else

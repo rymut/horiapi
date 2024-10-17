@@ -273,7 +273,7 @@ xt.Values.ProductType.SD2112 || t == xt.Values.ProductType.PC2161 ? (
                             s.RealA = n(8, 1),
                             s.RealB = n(8, 0))
                             */
-struct hori_lookup hori_config_sd2112_gamepad_lookup[] = {};
+struct hori_lookup hori_config_sd2112_gamepad_lookup[1];
 
 /** @brief PC2161 is identical to SD2112
  */

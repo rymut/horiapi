@@ -61,7 +61,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidapi)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER $<TARGET_PROPERTY:${PROJECT_NAME},INTERFACE_SOURCES>)
 
 add_executable(hori)
-target_sources(hori PRIVATE "src/hori/main.c")
+target_sources(hori PRIVATE "src/hori/main.c" "src/hori/hori_yaml.c" "src/hori/hori_yaml.h")
 target_link_libraries(hori PRIVATE horiapi argtable3::argtable3)
 
 include(GNUInstallDirs)
