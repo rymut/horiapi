@@ -1,0 +1,25 @@
+{
+    "version": 4,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 24,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "default",
+            "displayName": "default debug",
+            "binaryDir": "${sourceDir}/.builds/default",
+            "generator": "Ninja",
+            "toolchainFile": "${sourceDir}/cmake/conan_toolchain.cmake",
+            "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug" }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "default",
+            "displayName": "default",
+            "configurePreset": "default"
+        }
+    ]
+}

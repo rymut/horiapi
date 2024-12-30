@@ -1,0 +1,23 @@
+include_guard()
+find_program(CONAN conan NO_CACHE REQUIRED)
+if (NOT CONAN)
+    message(FATAL_ERROR "conan executable not found")
+endif()
+set(CONAN_TOOLCHAIN_ROOT "${CMAKE_BINARY_DIR}")
+string(REGEX REPLACE "/CMakeFiles/.*" "" CONAN_TOOLCHAIN_ROOT "${CONAN_TOOLCHAIN_ROOT}")
+
+if (NOT CMAKE_CONFIGURATION_TYPES)
+    if (CMAKE_BUILD_TYPE) 
+        set(CONAN_TOOLCHAIN_PATH "${CONAN_TOOLCHAIN_ROOT}/build/${CMAKE_BUILD_TYPE}/generators/conan_toolchain.cmake")
+        if (NOT EXISTS "${CONAN_TOOLCHAIN_PATH}")
+            execute_process(COMMAND
+                ${CONAN} install "${CMAKE_SOURCE_DIR}/" -of "${CONAN_TOOLCHAIN_ROOT}" -s build_type=${CMAKE_BUILD_TYPE} -c tools.cmake.cmaketoolchain:generator=${CMAKE_GENERATOR}
+                COMMAND_ECHO STDOUT)
+        endif()
+        if (EXISTS "${CONAN_TOOLCHAIN_PATH}")
+            include("${CONAN_TOOLCHAIN_PATH}")
+        endif()
+    endif()
+else()
+    message(FATAL_ERROR "Single config build system")
+endif()

@@ -61,7 +61,7 @@ void hori_yaml_parse_unknown(yaml_parser_t* parser) {
     }
     yaml_event_t event;
     int depth = 0;
-    while (yaml_parser_parse(parser, &event)) {
+       while (yaml_parser_parse(parser, &event)) {
         switch (event.type) {
         case YAML_STREAM_END_EVENT:
         case YAML_DOCUMENT_END_EVENT:
@@ -152,7 +152,7 @@ struct hori_config_audio* hori_yaml_parse_audio(yaml_parser_t* parser) {
                 }
                 break;
             default:
-
+                break;
             }
             break;
         case HORI_PARSE_AUDIO_STATE_KEY_UNKNOWN:

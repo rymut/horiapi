@@ -5,16 +5,6 @@ set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>DLL")
 set(CMAKE_C_STANDARD 99)
 set(CONAN_HOST_PROFILE "auto-cmake")
 
-# download conan provider
-set(CONAN_PROVIDER "${CMAKE_BINARY_DIR}/conan_provider.cmake")
-set(CONAN_PROVIDER_GITHUB "rymut/cmake-conan")
-if(NOT EXISTS "${CONAN_PROVIDER}")
-  message(STATUS "Downloading conan_provider.cmake from https://github.com/${CONAN_PROVIDER_GITHUB}")
-  file(DOWNLOAD "https://raw.githubusercontent.com/${CONAN_PROVIDER_GITHUB}/develop2/conan_provider.cmake"
-                "${CONAN_PROVIDER}"
-                TLS_VERIFY ON)
-endif()
-
 # configure options
 option(HORIAPI_BUILD_TESTS "Build horiapi tests" ON)
 option(HORIAPI_BUILD_EXAMPLES "Build horiapi examples" OFF)
@@ -24,6 +14,7 @@ project(horiapi LANGUAGES C)
 include("${CONAN_PROVIDER}")
 find_package(hidapi REQUIRED)
 find_package(argtable3 REQUIRED)
+find_package(yaml REQUIRED)
 
 
 add_library(${PROJECT_NAME})
@@ -62,7 +53,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER $<TARGET_PROPERTY
 
 add_executable(hori)
 target_sources(hori PRIVATE "src/hori/main.c" "src/hori/hori_yaml.c" "src/hori/hori_yaml.h")
-target_link_libraries(hori PRIVATE horiapi argtable3::argtable3)
+target_link_libraries(hori PRIVATE horiapi argtable3::argtable3 yaml)
 
 include(GNUInstallDirs)
 install(TARGETS ${PROJECT_NAME} PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/horiapi)
