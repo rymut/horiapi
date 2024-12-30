@@ -2,9 +2,6 @@
 
 #include <time.h>
 
-#include <Windows.h>
-#pragma comment(lib, "Kernel32")
-
 #if defined(HORI_DOXYGEN)
 /** @brief Clock type with miliseconds precission */
 typedef struct hori_clock hori_clock_t;
@@ -38,8 +35,13 @@ double hori_clock_diff(hori_clock_t clock1, hori_clock_t clock2);
  */
 void hori_sleep_ms(int miliseconds);
 #else
+
 typedef clock_t hori_clock_t;
 #define hori_clock_now() clock()
 #define hori_clock_diff(clock1, clock2) (difftime(clock1, clock2) / CLOCKS_PER_SEC)
-#define hori_sleep_ms(delay) Sleep(delay)
+
+#if WIN32
+#include "hori_time_win32.h"
+#endif 
+
 #endif

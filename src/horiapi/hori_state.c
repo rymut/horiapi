@@ -14,7 +14,7 @@ int HORI_API_CALL hori_get_state(hori_device_t* device) {
         return HORI_STATE_NONE;
     }
     struct hid_device_info* dev_info = hid_get_device_info(device->gamepad);
-    hori_device_config_t* device_config = hori_internal_find_device_config(device->context->devices, dev_info);
+    hori_device_config_t* device_config = hori_internal_device_config_find(device->context->devices, dev_info);
     if (device_config == NULL) {
         return HORI_STATE_NONE;
     }

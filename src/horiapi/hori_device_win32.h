@@ -15,11 +15,6 @@ extern "C" {
     struct hori_device_platform_data {
         struct hori_internal_string_list location;
     };
-
-    typedef struct hori_device_platform_data hori_device_platform_data_t;
-
-    hori_device_platform_data_t* hori_internal_platform_data();
-    void hori_internal_free_platform_data(hori_device_platform_data_t* data);
 #if defined(__cplusplus)
 }
 #endif 

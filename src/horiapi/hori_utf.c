@@ -1,6 +1,6 @@
-#include "hori_utf8.h"
+#include "hori_utf.h"
 
-#include "../utf8/utf8.h"
+#include <utf8/utf8.h>
 
 /** @brief Validate UTF-8 sequence
 

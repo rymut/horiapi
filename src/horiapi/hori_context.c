@@ -70,7 +70,7 @@ const hori_context_t* hori_internal_context() {
     return &hori_default_context;
 }
 
-hori_device_config_t* hori_internal_find_device_config(hori_device_config_t* list_front, struct hid_device_info* info) {
+hori_device_config_t* hori_internal_device_config_find(hori_device_config_t* list_front, struct hid_device_info* info) {
     if (info == NULL) {
         return NULL;
     }

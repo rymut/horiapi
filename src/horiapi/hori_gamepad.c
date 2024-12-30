@@ -4,7 +4,7 @@
 
 #include <hidapi/hidapi.h>
 
-#include "horiapi.h"
+#include <horiapi/horiapi.h>
 #include "hori_device.h"
 
 enum hori_function {

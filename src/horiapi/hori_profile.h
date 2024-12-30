@@ -19,8 +19,11 @@
 #define HORI_WHEEL_CONFIG_SIZE 5
 #define HORI_PROFILE_CONFIG_SIZE 431
 
+/** @brief Optional value representation
+ */
 struct hori_value_config {
     unsigned char enabled;
+    /** @brief Stored value used only when enabled is set to true */
     unsigned char value;
 };
 
@@ -36,17 +39,119 @@ struct hori_analog_config {
     @since 0.1.0
  */
 struct hori_stick_config {
-    unsigned char any_enabled; // 0 - ?? 
+    /** @brief Function enabled
+
+        Non zero if any of features is enabled:
+            HorReverse
+            VerticalReverse
+            AnyReverse
+            TargetSetting
+            Agile
+            LinearValue
+            DeadZone
+     */
+    unsigned char any_enabled; // 0 - ??
+    /** @brief Enable dead zone
+
+        value normalized from 0 to 100
+      */
     struct hori_value_config dead_zone_area;
     struct {
-        unsigned char enabled;  // 3
-        unsigned char vertical; // 4
-        unsigned char horizontal; // 5
+        unsigned char enabled;  // 3 - 1 enabled (vertical or horizontal) 0 disabled
+        unsigned char vertical; // 4 - 1 enabled 0 disabled 
+        unsigned char horizontal; // 5 - 1 enabled 0 disabled
     } reverse_axis;
     unsigned char stick_reverse; // 6: 1 - left, 2 - right, 3 - wheel
+    /** @brief setting maximum value of analog stick
+
+        Define maximum value of analog stick that can be set (upper treshold filter)
+
+        Target Value is from range 0 - 100 (it is mapped to 0 255)
+     */
     struct hori_value_config target; // 7 - 8
+    /** @brief Setting digital mode (step function)
+
+        Basically angular dead zones (for 8 cardinal directions)
+
+        Converting analog to digital value
+        When step function is enabled all values after set-point will be set as max value of analog all lower will be sat as 0
+
+        default agile value is 10% (value from range 0-100)?
+        */
     struct hori_value_config agile; // 9 - 10 (always 10 if 9 is enabled)
+    /** @brief Use linear mapping
+
+        When value is set to 0 linear mapping is not used, otherwise
+        values in @analog are defined as:
+          analog[0]
+          analog[1] = {0, 0}
+
+            function (e, t) {
+    const n = "Left",
+      i = "Right",
+      a = [
+        PEDAL IS REVERSE AXIS - MORE IS LESS
+        LESS RESPONSIVE
+        { Level: 3, Original: 222, Target: 52, PedalDirection: n },
+        { Level: 2, Original: 222, Target: 104, PedalDirection: n },
+        { Level: 1, Original: 222, Target: 164, PedalDirection: n },
+        DEFAULT ? { Level: 0, Original: 222, Target: 222, PedalDirection: n },
+        { Level: -1, Original: 222, Target: 215, PedalDirection: n },
+        { Level: -2, Original: 222, Target: 210, PedalDirection: n },
+        { Level: -3, Original: 222, Target: 205, PedalDirection: n },
+        MORE RESPONSIVE
+
+            0 . 2 . 4 . 6 . 8 . 1 . 1 . 1 . 1 . 2 . 2
+                0   0   0   0   2   4   6   8   2   4
+                                0   0   0   0   0   0
+        240            +3      +2            +132  10    
+        .                               
+        220 
+        .   
+        180 
+        .   
+        160 
+        .   
+        140 
+        .   
+        120 
+        .   
+        80  
+        .   
+        60             
+        .   
+        40          
+        .   
+        20      
+        .
+        0   
+            0 . 2 . 4 . 6 . 8 . 1 . 1 . 1 . 1 . 2 . 2
+                0   0   0   0   2   4   6   8   2   4
+                                0   0   0   0   0   0
+        { Level: 3, Original: 240, Target: 60, PedalDirection: i },
+        { Level: 2, Original: 240, Target: 120, PedalDirection: i },
+        { Level: 1, Original: 240, Target: 200, PedalDirection: i },
+        { Level: 0, Original: 240, Target: 240, PedalDirection: i },
+        { Level: -1, Original: 240, Target: 230, PedalDirection: i },
+        { Level: -2, Original: 240, Target: 220, PedalDirection: i },
+        { Level: -3, Original: 240, Target: 210, PedalDirection: i },
+      ],
+      r = {
+          */
     unsigned char linear;
+    /** @brief Remap values based on analog range
+
+        Define set of two points p^1 p^2
+        disable mapping:
+            p^1=(0, 0)
+            p^2=(0, 0)
+        reverse mapping
+            p^0=(0, 255)
+            p^1=(255, 0)
+        identity mapping
+            p^0=(0, 0)
+            p^1=(255, 255)
+     */
     struct hori_analog_config analog[2];
 
 };
@@ -66,9 +171,13 @@ enum hori_stick_option {
 int hori_internal_set_stick_value(struct hori_stick_config* stick, int key, char value);
 int hori_internal_set_stick_flag(struct hori_stick_config* stick, int key, int value);
 
-
 struct hori_feedback_config {
-    unsigned char Feedback[HORI_FEEDBACK_CONFIG_SIZE];
+    unsigned char unknown0;
+    unsigned char LeftVibration; // 1
+    unsigned char RightVibration; //2
+    unsigned char unknown1;
+    unsigned char SideLeftVibration; // 4
+    unsigned char SideRightVibration; // 5
 };
 HORI_STATIC_ASSERT(sizeof(struct hori_feedback_config) == HORI_FEEDBACK_CONFIG_SIZE, "");
 
@@ -105,14 +214,14 @@ struct hori_button_config {
         unsigned char flags;
     };// 2
 
-    unsigned char turbo_enabled;			// 3
-    unsigned char turbo_speed;	// 4
-    unsigned char quick_turbo_enabled;	//5
+    unsigned char turbo_enabled;			// 3 bool 0 , 1 
+    unsigned char turbo_speed;	// 4 - 1 turbo (disabled normal) if > 1 then turbo is used when @turbo enabled is set value is set in HZ
+    unsigned char quick_turbo_enabled;	//5 always the same as 0, the same as turbo enabled (can be changed)
     unsigned char dead_range;	//6 
-    unsigned char edge_dead_range;//7
-    struct hori_value_config map_button; // 8-9
-    unsigned char linear_value;	//10
-    struct hori_analog_config map_analog[2];			//14
+    unsigned char edge_dead_range;//7 - alwayes dead_range + 1 (for dpad)
+    struct hori_value_config map_button; // 8-9 - equal button by default (indexof button)
+    unsigned char linear_value;	//10 - probably value of mapped analog button ??
+    struct hori_analog_config map_analog[2];			//14 - same thing as in analog value 
 };
 HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE , "");
 
@@ -125,6 +234,14 @@ HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE 
         This function return -1 on error, or value on success (always in range 0-255)
   */
 int hori_internal_get_button_config_value(struct hori_button_config const* button, int key);
+/** @brief Initialize button config
+
+    @param button[in|out] button The object with field to reset
+
+    @returns
+        This function returns -1 when button is nullptr
+  */
+int hori_internal_init_button_config(struct hori_button_config* button);
 
 int hori_internal_set_button_config_value(struct hori_button_config* button, int key, char value);
 int hori_internal_get_button_config_enabled(struct hori_button_config const* button, int key);
@@ -160,9 +277,37 @@ struct hori_profile_config {
     union {
         struct {
             char sensor[HORI_PROFILE_SPF023_SENSOR_SIZE]; // 40 - 43
+            //for SPF_023 or PC2161
+            // data is (NOT KNOWN WHERE T, R, B, L is stored)
+            // 
+            // 0 - dpadconfig.TR
+            // 1 - dpadconfig.RB
+            // 2 - dpadconfig.BL
+            // 3 - dpadconfig.LT
+            // 4 - balanced input if 0 or 1 or 2 (not balanced input)
+            // 5 - 0
+            // 6 - 0
+            // 7 - 0
+            // 8 - 0
             char reserve[HORI_PROFILE_SPF023_RESERVE_SIZE]; // 44 - 52
         } spf023;
         struct {
+            /*
+            (Tt.Sensor.SensorEnabled = m(e[0], 0)),
+            (Tt.Sensor.QuickKeyEnabled = m(e[0], 1)),
+            (Tt.Sensor.QuickAxisType = m(e[0], 2) ? 1 : 0),
+            (Tt.Sensor.Sensor_switch = e[1]),
+            (Tt.Sensor.Sensitivity = e[3]),
+            (Tt.Sensor.Original_data1 = e[5]),
+            (Tt.Sensor.Target_data1 = e[6]),
+            (Tt.Sensor.Original_data2 = e[7]),
+            (Tt.Sensor.Target_data2 = e[8]),
+            (Tt.Sensor.SensorAsLs = M(e[9])),
+            (Tt.Sensor.HorReverse = M(e[10])),
+            (Tt.Sensor.VerReverse = M(e[11])),
+            (Tt.Sensor.QuickKey = It.getButtonKey(e[12])),
+
+            */
             char sensor[HORI_PROFILE_COMMON_SENSOR_SIZE]; // 40 - 43
         } common;
     };

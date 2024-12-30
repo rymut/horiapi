@@ -23,7 +23,7 @@
 #include "hori_context.h"
 
 wchar_t* hori_internal_get_device_interfaces_string_list(wchar_t* device_id, LPGUID interface_class_guid);
-wchar_t* hori_internal_hid_location_path(const char* hid_path, wchar_t** device_instance);
+wchar_t* hori_device_win32_get_hid_location_path(const char* hid_path, wchar_t** device_instance);
 
 static uint8_t hori_internal_get_firmware_command[] = { 15, 0, 0, 60, 9 };
 
@@ -61,7 +61,7 @@ int hori_internal_send_enter_config_xinput(hori_device_t* device) {
     wchar_t* list = NULL;
     ULONG len = 0;
     wchar_t* device_id = NULL;
-    wchar_t* locationPath = hori_internal_hid_location_path(hid_get_device_info(device->gamepad)->path, &device_id);
+    wchar_t* locationPath = hori_device_win32_get_hid_location_path(hid_get_device_info(device->gamepad)->path, &device_id);
     free(locationPath);
 
     if (device_id == NULL) {
@@ -130,55 +130,6 @@ ULONG get_device_instance_property_size(DEVINST deviceInstance, const DEVPROPKEY
     return size;
 }
 
-static PBYTE hori_internal_device_instance_get_property(DEVINST deviceInstance, const DEVPROPKEY* propertyKey) {
-    DEVPROPTYPE type = DEVPROP_TYPE_NULL;
-    ULONG size = 0;
-    CM_Get_DevNode_PropertyW(deviceInstance, propertyKey, &type, NULL, &size, 0);
-
-    if (size == 0) {
-        return NULL;
-    }
-    PBYTE propertyValue = (PBYTE)calloc(size, sizeof(char));
-    if (propertyValue == NULL) {
-        return NULL;
-    }
-    if (CR_SUCCESS != CM_Get_DevNode_PropertyW(deviceInstance, propertyKey, &type, propertyValue, &size, 0)) {
-        free(propertyValue);
-        propertyValue = NULL;
-    }
-    return propertyValue;
-}
-
-static wchar_t* hori_internal_UTF8toUTF16(const char* utf8) {
-    wchar_t* utf16 = NULL;
-    int result = 0, error = 0;
-    int len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, NULL, 0);
-    if (len) {
-        utf16 = (wchar_t*)calloc(len, sizeof(wchar_t));
-        if (utf16 == NULL) {
-            return NULL;
-        }
-        FORMAT_MESSAGE_FROM_SYSTEM;
-        result = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, utf16, len);
-        error = GetLastError();
-    }
-    return utf16;
-}
-
-static char* hori_internal_UTF16toUTF8(const wchar_t* utf16)
-{
-    char* utf8 = NULL;
-    int len = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, utf16, -1, NULL, 0, NULL, NULL);
-    if (len) {
-        utf8 = (char*)calloc(len, sizeof(char));
-        if (utf8 == NULL) {
-            return NULL;
-        }
-        WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, utf16, -1, utf8, len, NULL, NULL);
-    }
-    return utf8;
-}
-
 DEVPROPTYPE get_device_interface_property_type(LPCWSTR path, const DEVPROPKEY* prop) {
     if (prop == NULL) {
         return 0;
@@ -203,25 +154,6 @@ ULONG get_device_interface_property_size(LPCWSTR path, const DEVPROPKEY* prop) {
     return size;
 }
 
-static BOOL get_device_interface_property(LPCWSTR path, const DEVPROPKEY* prop, DEVPROPTYPE buffer_type, PVOID buffer, ULONG buffer_size) {
-    if (prop == NULL) {
-        return FALSE;
-    }
-    ULONG prop_size = get_device_interface_property_size(path, prop);
-    if (buffer_size < prop_size) {
-        return FALSE;
-    }
-    DEVPROPTYPE prop_type = get_device_interface_property_type(path, prop);
-    if (buffer_type != prop_type) {
-        return FALSE;
-    }
-    if (CR_SUCCESS != CM_Get_Device_Interface_PropertyW(
-        path, prop, &prop_type, buffer, &prop_size, 0)) {
-        return FALSE;
-    }
-    return TRUE;
-}
-
 static BOOL get_device_interface_property_guid(LPCWSTR path, const DEVPROPKEY* prop, GUID* value) {
     GUID result;
     GUID* buffer = &result;
@@ -233,52 +165,7 @@ static BOOL get_device_interface_property_guid(LPCWSTR path, const DEVPROPKEY* p
     return get_device_interface_property(path, prop, buffer_type, buffer, buffer_size);
 }
 
-static LPWSTR get_device_interface_property_string(LPCWSTR path, const DEVPROPKEY* prop) {
-    const DEVPROPTYPE buffer_type = DEVPROP_TYPE_STRING;
-    if (get_device_interface_property_type(path, prop) != buffer_type) {
-        return NULL;
-    }
-    const ULONG buffer_size = get_device_interface_property_size(path, prop);
-    if (buffer_size == 0) {
-        return NULL;
-    }
-    LPWSTR buffer = (LPWSTR)malloc(buffer_size);
-    if (buffer == NULL) {
-        return NULL;
-    }
-    if (get_device_interface_property(path, prop, buffer_type, buffer, buffer_size) == FALSE)
-    {
-        free(buffer);
-        buffer = NULL;
-    }
-    return buffer;
-}
-static LPWSTR get_device_interface_property_string_list(LPCWSTR path, const DEVPROPKEY* prop) {
-    const DEVPROPTYPE buffer_type = DEVPROP_TYPE_STRING_LIST;
-    if (get_device_interface_property_type(path, prop) != buffer_type) {
-        return NULL;
-    }
-    const ULONG buffer_size = get_device_interface_property_size(path, prop);
-    if (buffer_size == 0) {
-        return NULL;
-    }
-    LPWSTR buffer = (LPWSTR)malloc(buffer_size);
-    if (buffer == NULL) {
-        return NULL;
-    }
-    if (get_device_interface_property(path, prop, buffer_type, buffer, buffer_size) == FALSE)
-    {
-        free(buffer);
-        buffer = NULL;
-    }
-    return buffer;
-}
 
-static void test() {
-
-    //myGUIDFromString(L"{d61ca365-5af4-4486-998b-9db4734c6ca3}", &GUID_DEVCLASS_TOASTER);
-    //HidD_GetHidGuid(&GUID_DEVINTERFACE_TOASTER)
-}
 
 HANDLE OpenDeviceInterface(const wchar_t* path, BOOL readOnly)
 {
@@ -479,68 +366,6 @@ int hori_internal_string_list_size(wchar_t* string_list, int* size) {
     return (element_count + 1) * sizeof(wchar_t);
 }
 
-/**
- * @brief Return location string list for windows as wchar
- * @return pointer (needs to be free by user)
- */
-wchar_t* hori_internal_hid_location_path(const char* hid_path, wchar_t** device_instance) {
-    if (hid_path == NULL) {
-        return NULL;
-    }
-    wchar_t* path = hori_internal_UTF8toUTF16(hid_path);
-    if (path == NULL) {
-        return NULL;
-    }
-    wchar_t* deviceId = get_device_interface_property_string(path, &DEVPKEY_Device_InstanceId);
-    free(path); path = NULL;
-    if (deviceId == NULL) {
-        return NULL;
-    }
-    DEVINST devNode = 0;
-    CONFIGRET result = CM_Locate_DevNodeW(&devNode, (DEVINSTID_W)deviceId, CM_LOCATE_DEVNODE_NORMAL);
-    free(deviceId); deviceId = NULL;
-    if (result != CR_SUCCESS) {
-        return NULL;
-    }
-    const GUID XnaComposite = { 0xd61ca365, 0x5af4, 0x4486, { 0x99, 0x8b, 0x9d, 0xb4, 0x73, 0x4c, 0x6c, 0xa3} };
-    for (DEVINST devParent = devNode, devChild = 0; devParent != devChild; devChild = devParent, CM_Get_Parent(&devParent, devChild, 0))
-    {
-        const wchar_t prefix[] = L"\\Device\\USBPDO-";
-        sizeof(prefix) / sizeof(wchar_t);
-        wchar_t* pdoName = (wchar_t*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_PDOName);
-        if (pdoName == NULL) {
-            continue;
-        }
-        if (wcsncmp(prefix, pdoName, sizeof(prefix) / sizeof(wchar_t)) == 0) {
-            free(pdoName);
-            pdoName = NULL;
-            continue;
-        }
-        free(pdoName);
-        pdoName = NULL;
-
-        GUID* classGuid = (GUID*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_ClassGuid);
-        if (classGuid == NULL) {
-            continue;
-        }
-        if (!(IsEqualGUID(classGuid, &GUID_DEVCLASS_USB) || IsEqualGUID(classGuid, &XnaComposite))) {
-            free(classGuid);
-            continue;
-        }
-        free(classGuid);
-
-        wchar_t* locationPaths = (wchar_t*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_LocationPaths);
-        if (locationPaths) {
-            if (device_instance != NULL) {
-                free(*device_instance);
-                *device_instance = (wchar_t*)hori_internal_device_instance_get_property(devParent, &DEVPKEY_Device_InstanceId);
-            }
-            return locationPaths;
-        }
-    }
-    return NULL;
-}
-
 hori_device_t* hori_open(hori_product_t product, int index, hori_context_t* context) {
     hori_enumeration_t* devs = hori_enumerate(product, context);
 
@@ -580,7 +405,7 @@ int hori_internal_open(hori_device_t* device, unsigned short product_id, unsigne
         }
         struct hori_internal_string_list location;
         memset(&location, 0, sizeof(location));
-        location.value = hori_internal_hid_location_path(info->path, NULL);
+        location.value = hori_device_win32_get_hid_location_path(info->path, NULL);
         if (location.value == NULL) {
             continue;
         }
@@ -616,69 +441,3 @@ hori_device_config_t* hori_get_device_config(hori_device_t* device) {
     return device->config;
 }
 
-hori_device_t* hori_open_path(char* path, hori_context_t* context) {
-    hid_device* hid_dev = hid_open_path(path);
-    if (hid_dev == NULL) {
-        // error no device found
-        return NULL;
-    }
-    struct hid_device_info* hid_dev_info = hid_get_device_info(hid_dev);
-    if (hid_dev_info == NULL) {
-        hid_close(hid_dev);
-        return NULL;
-    }
-    hori_context_t* ctx = context ? context : hori_internal_context();
-    hori_device_config_t* device_config = hori_internal_find_device_config(ctx->devices, hid_dev_info);
-    if (device_config == NULL) {
-        hid_close(hid_dev);
-        return NULL;
-    }
-    unsigned short product_id = hid_dev_info->product_id;
-    hid_close(hid_dev);
-    hori_device_platform_data_t* platform_data = hori_internal_platform_data(device_config, path);
-    if (platform_data == NULL) {
-        return NULL;
-    }
-    hori_device_t* device = (hori_device_t*)calloc(1, sizeof(hori_device_t));
-    if (device == NULL) {
-        free(platform_data);
-        return NULL;
-    }
-    device->hori_api_version = HORI_API_VERSION;
-    device->platform_data = platform_data;
-    device->context = ctx;
-    device->config = device_config;
-
-    int result = -1;
-    if (device_config->hid_config_product_id == product_id) {
-        result = hori_internal_open(device, device_config->hid_config_product_id, device_config->hid_config_usage_page_gamepad, device_config->hid_config_usage_page_profile);
-    }
-    else {
-        result = hori_internal_open(device, device_config->hid_normal_product_id, device_config->hid_normal_usage_page_gamepad, device_config->hid_normal_usage_page_control);
-    }
-    if (result == -1) {
-        hori_close(device);
-    }
-    return device;
-}
-
-hori_device_platform_data_t* hori_internal_platform_data(hori_device_config_t* device_config, char* path) {
-    wchar_t* location = hori_internal_hid_location_path(path, NULL);
-    if (location == NULL) {
-        return NULL;
-    }
-    hori_device_platform_data_t* platform_data = (hori_device_platform_data_t*)calloc(1, sizeof(hori_device_platform_data_t));
-    if (platform_data == NULL) {
-        return NULL;
-    }
-    platform_data->location.value = location;
-    platform_data->location.byte_size = hori_internal_string_list_size(location, &platform_data->location.count);
-    return platform_data;
-}
-
-void hori_internal_free_platform_data(hori_device_platform_data_t* data) {
-    if (data) {
-        free(data->location.value);
-    }
-    free(data);
-}

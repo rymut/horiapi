@@ -1,6 +1,7 @@
 #pragma once
 
 #include <inttypes.h>
+#include <wchar.h>
 
 /** @brief Validate UTF-8 sequence
 
@@ -16,3 +17,8 @@
         This function will return -1 on invalid input arguments
   */
 int hori_internal_utf8_byte_size(uint8_t const* data, int size);
+
+
+wchar_t* hori_internal_UTF8toUTF16(const char* utf8);
+
+char* hori_internal_UTF16toUTF8(const wchar_t* utf16);

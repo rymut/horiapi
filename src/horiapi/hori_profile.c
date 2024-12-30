@@ -4,7 +4,7 @@
 
 #include <horiapi/horiapi.h>
 
-#include "hori_utf8.h"
+#include "hori_utf.h"
 
 int hori_internal_is_valid_button_config(struct hori_button_config* config) {
     if (config == NULL) {
@@ -58,6 +58,7 @@ hori_profile_t *hori_make_profile(int product) {
     result->error_code = HORI_PROFILE_NO_ERROR;
     return result;
 }
+
 void hori_free_profile(hori_profile_t* profile) {
     if (profile == NULL) {
         return;

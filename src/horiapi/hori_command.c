@@ -84,7 +84,7 @@ static int hori_internal_get_command_payload_offset(uint8_t const* data, int siz
 
 static int hori_internal_send_command(hori_device_t* device, int command_id) {
     uint8_t command[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, command_id, 0 };
-    return hori_internal_write_control(device, command, sizeof(command));
+    return hori_device_write_control(device, command, sizeof(command));
 }
 
 int hori_internal_switch_profile(hori_device_t* device, int profile) {
@@ -92,7 +92,7 @@ int hori_internal_switch_profile(hori_device_t* device, int profile) {
         return -1;
     }
     uint8_t command[HORI_INTERNAL_REQUEST_SIZE] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_SWITCH_PROFILE, (uint8_t)profile, 0 };
-    return hori_internal_write_control(device, command, sizeof(command));
+    return hori_device_write_control(device, command, sizeof(command));
 }
 
 int hori_internal_exit_profile(hori_device_t* device)
@@ -109,7 +109,7 @@ static uint8_t hori_internal_heartbeat[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0
 
 int hori_internal_send_heartbeat(hori_device_t* device)
 {
-    return hori_internal_write_control(device, hori_internal_heartbeat, sizeof(hori_internal_heartbeat));
+    return hori_device_write_control(device, hori_internal_heartbeat, sizeof(hori_internal_heartbeat));
 }
 
 int hori_internal_parse_version_number(char const* data, int data_size) {
@@ -289,14 +289,14 @@ int hori_internal_parse_firmware_version_str(const uint8_t* data, int data_size,
 
 int hori_internal_read_firmware_version(hori_device_t* device) {
     uint8_t read_firmware_request[64] = { HORI_REPORT_ID_PROFILE_REQUEST, 0, 0, 60, HORI_COMMAND_ID_READ_FIRMWARE_VERSION, 0 };
-    if (-1 == hori_internal_write_control(device, read_firmware_request, sizeof(read_firmware_request))) {
+    if (-1 == hori_device_write_control(device, read_firmware_request, sizeof(read_firmware_request))) {
         return -1;
     }
     if (-1 == hori_internal_send_heartbeat(device)) {
         return -1;
     }
     uint8_t response[HORI_INTERNAL_RESPONSE_SIZE];
-    int response_size = hori_internal_read_control(device, response, HORI_INTERNAL_RESPONSE_SIZE);
+    int response_size = hori_device_read_control(device, response, HORI_INTERNAL_RESPONSE_SIZE);
     int payload_offset = hori_internal_get_command_payload_offset(response, response_size, HORI_COMMAND_ID_READ_FIRMWARE_VERSION_ACK);
     if (payload_offset == -1) {
         return -1;
@@ -386,7 +386,7 @@ int hori_internal_get_profile_memory_response(hori_device_t* device, int profile
             timeout_ms = device->context->retry_read_timeout_ms;
         }
         memset(&packet, 0, sizeof(packet));
-        int packet_size = hori_internal_read_control_timeout(device, (uint8_t*)&packet, sizeof(packet), timeout_ms);
+        int packet_size = hori_device_read_control_timeout(device, (uint8_t*)&packet, sizeof(packet), timeout_ms);
         if (-1 == packet_size) {
             return -1;
         }
@@ -404,7 +404,7 @@ int hori_internal_get_profile_memory_response(hori_device_t* device, int profile
             if (data != NULL && size > 0) {
                 memcpy(data, profile->data, size);
             }
-            packet_size = hori_internal_read_control_timeout(device, (uint8_t*)&packet, sizeof(packet), timeout_ms);
+            packet_size = hori_device_read_control_timeout(device, (uint8_t*)&packet, sizeof(packet), timeout_ms);
             return size;
         }
     }

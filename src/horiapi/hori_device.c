@@ -5,7 +5,7 @@
 #include "hori_command.h"
 #include "hori_profile.h"
 
-int hori_internal_write_control(hori_device_t* device, uint8_t* data, int size) {
+int hori_device_write_control(hori_device_t* device, uint8_t* data, int size) {
     if (device == NULL) {
         return -1;
     }
@@ -18,7 +18,7 @@ int hori_internal_write_control(hori_device_t* device, uint8_t* data, int size) 
     return hid_write(device->control, data, size);
 }
 
-int hori_internal_read_control_timeout(hori_device_t* device, uint8_t* data, int size, int miliseconds) {
+int hori_device_read_control_timeout(hori_device_t* device, uint8_t* data, int size, int miliseconds) {
     if (device == NULL) {
         return -1;
     }
@@ -32,23 +32,23 @@ int hori_internal_read_control_timeout(hori_device_t* device, uint8_t* data, int
     return hid_read_timeout(device->control, data, size, miliseconds);
 }
 
-int hori_internal_read_control_retry(hori_device_t* device, uint8_t* data, int size) {
+int hori_device_read_control_retry(hori_device_t* device, uint8_t* data, int size) {
     if (device == NULL) {
         return -1;
     }
-    return hori_internal_read_control_timeout(device, data, size, device->context->retry_read_timeout_ms);
+    return hori_device_read_control_timeout(device, data, size, device->context->retry_read_timeout_ms);
 }
 
-int hori_internal_read_control(hori_device_t* device, uint8_t* data, int size) {
+int hori_device_read_control(hori_device_t* device, uint8_t* data, int size) {
     if (device == NULL) {
         return -1;
     }
-    return hori_internal_read_control_timeout(device, data, size, device->context->read_timeout_ms);
+    return hori_device_read_control_timeout(device, data, size, device->context->read_timeout_ms);
 }
 
 void HORI_API_CALL hori_close(hori_device_t* device) {
     if (device) {
-        hori_internal_free_platform_data(device->platform_data);
+        hori_free_platform_data(device->platform_data);
         hid_close(device->control);
         hid_close(device->gamepad);
         free(device->firmware_version);
@@ -95,7 +95,7 @@ const struct hori_firmware_version* HORI_API_CALL hori_get_firmware_version(hori
     return device->firmware_version;
 }
 
-int hori_internal_device_set_profile(hori_device_t* device, int profile_id, struct hori_profile* value) {
+int hori_device_set_profile(hori_device_t* device, int profile_id, struct hori_profile* value) {
     if (device == NULL) {
         return -1;
     }
@@ -138,7 +138,7 @@ int hori_internal_device_set_profile(hori_device_t* device, int profile_id, stru
     return 0;
 }
 
-struct hori_device_profile* hori_internal_device_get_profile(hori_device_t* device, int profile_id) {
+struct hori_device_profile* hori_device_get_profile(hori_device_t* device, int profile_id) {
     if (device == NULL) {
         return NULL;
     }
@@ -154,7 +154,7 @@ hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profil
     if (device == NULL) {
         return NULL;
     }
-    struct hori_device_profile* device_profile = hori_internal_device_get_profile(device, profile_id);
+    struct hori_device_profile* device_profile = hori_device_get_profile(device, profile_id);
     if (device_profile != NULL) {
         return device_profile->profile;
     }
@@ -167,7 +167,7 @@ hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profil
         free(profile);
         return NULL;
     }
-    if (-1 == hori_internal_device_set_profile(device, profile_id, profile)) {
+    if (-1 == hori_device_set_profile(device, profile_id, profile)) {
         free(profile);
         return NULL;
     }
@@ -190,7 +190,7 @@ int HORI_API_CALL hori_set_profile(hori_device_t* device, int profile_id, hori_p
     }
     // write profile
 
-    struct hori_device_profile* device_profile = hori_internal_device_get_profile(device, profile_id);
+    struct hori_device_profile* device_profile = hori_device_get_profile(device, profile_id);
     if (device_profile == NULL) {
         if (profile == NULL) {
             return 0;
@@ -200,11 +200,11 @@ int HORI_API_CALL hori_set_profile(hori_device_t* device, int profile_id, hori_p
             return -1;
         }
         memcpy(&dev_profile->config, &profile_config, sizeof(profile_config));
-        if (-1 == hori_internal_device_set_profile(device, profile_id, dev_profile)) {
+        if (-1 == hori_device_set_profile(device, profile_id, dev_profile)) {
             free(dev_profile);
             return -1;
         }
-        device_profile = hori_internal_device_get_profile(device, profile_id);
+        device_profile = hori_device_get_profile(device, profile_id);
     }
     if (device_profile == NULL) {
         // should never happen

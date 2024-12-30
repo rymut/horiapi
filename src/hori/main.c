@@ -7,29 +7,13 @@
 
 #include <horiapi/horiapi.h>
 #include <argtable3.h>
-
-#include "../horiapi/hori_command.h"
+#include <horiapi/hori_profile.h>
 
 #include "argtable3.h"
 
+#include "command.h"
 #define REG_EXTENDED 1
 #define REG_ICASE (REG_EXTENDED << 1)
-
-int main_list() {
-    hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
-    int i = 0;
-    for (hori_enumeration_t* device = devices; device != NULL; device = device->next, i++) {
-        printf("%d:\n", i);
-        printf("\tpath: %s\n", device->path);
-        printf("\tmodel: %s\n", device->device_config->firmware_name);
-        wprintf(L"\tmanufacturer: %s\n", device->manufacturer_string);
-        wprintf(L"\tproduct: %s\n", device->product_string);
-        printf("\tcontroller: %d\n", device->device_config->device_config_mode);
-        printf("\tstate: %d\n", device->state);
-    }
-    hori_free_enumerate(devices);
-    return EXIT_SUCCESS;
-}
 
 int main_set() {
     return EXIT_SUCCESS;
@@ -39,137 +23,6 @@ int main_get() {
     return EXIT_SUCCESS;
 }
 
-#include "../horiapi/hori_time.h"
-
-int main_test(int device_id, int wait_miliseconds) {
-    char* device_path = NULL;
-    hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
-    if (devices == NULL) {
-        printf("No devices found on the system");
-        return EXIT_FAILURE;
-    }
-    int i = 0;
-    for (hori_enumeration_t* device = devices; device != NULL; device = device->next, i++) {
-        if (device_id == i) {
-            device_path = strdup(device->path);
-        }
-    }
-    hori_free_enumerate(devices);
-
-    if (device_path == 0) {
-        printf("Device id %d not found\n", device_id);
-        return EXIT_FAILURE;
-    }
-    hori_device_t* device = hori_open_path(device_path, NULL);
-    if (device == NULL) {
-        printf("cannot open device %d\n", device_id);
-        return EXIT_FAILURE;
-    }
-    if (hori_get_state(device) != HORI_STATE_CONFIG) {
-        hori_set_state(device, HORI_STATE_CONFIG);
-    }
-    if (hori_get_state(device) != HORI_STATE_CONFIG) {
-        hori_close(device);
-        return EXIT_FAILURE;
-    }
-    double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
-    hori_clock_t start = hori_clock_now();
-    for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
-        if (-1 == hori_send_heartbeat(device)) {
-            printf("cannot send heartbeat\n");
-            break;
-        }
-        printf("check status - %5.2lf\n", diff);
-        hori_sleep_ms(100);
-    }
-    hori_close(device);
-    device = NULL;
-    return EXIT_SUCCESS;
-}
-
-int main_gamepad(int device_id, int wait_miliseconds) {
-    char* device_path = NULL;
-    hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
-    if (devices == NULL) {
-        printf("No devices found on the system");
-        return EXIT_FAILURE;
-    }
-    int i = 0;
-    for (hori_enumeration_t* device = devices; device != NULL; device = device->next, i++) {
-        if (device_id == i) {
-            device_path = strdup(device->path);
-        }
-    }
-    hori_free_enumerate(devices);
-
-    if (device_path == 0) {
-        printf("Device id %d not found\n", device_id);
-        return EXIT_FAILURE;
-    }
-    hori_device_t* device = hori_open_path(device_path, NULL);
-    if (device == NULL) {
-        printf("cannot open device %d\n", device_id);
-        return EXIT_FAILURE;
-    }
-    if (hori_get_state(device) != HORI_STATE_CONFIG) {
-        hori_set_state(device, HORI_STATE_CONFIG);
-    }
-    if (hori_get_state(device) != HORI_STATE_CONFIG) {
-        hori_close(device);
-        return EXIT_FAILURE;
-    }
-
-    hori_gamepad_t* gamepad = hori_make_gamepad();
-    if (gamepad == NULL) {
-        hori_close(device);
-        return EXIT_FAILURE;
-    }
-    double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
-    hori_clock_t start = hori_clock_now();
-    long long previous_buttons = 0;
-    for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
-        // read gampade status
-        if (hori_get_state(device) == HORI_STATE_CONFIG) {
-            hori_send_heartbeat(device);
-        }
-        int result = hori_read_gamepad_timeout(device, gamepad, 150);
-        if (result == -1) {
-            printf("errror\n");
-            break;
-        }
-        int buttons = hori_get_buttons(gamepad, 0);
-        if (buttons == -1) {
-            break;
-        }
-        long long allbuttons = buttons;
-        buttons = hori_get_buttons(gamepad, 1);
-        if (buttons != -1) {
-            allbuttons = (allbuttons << sizeof(int) * 8) | buttons;
-        }
-        if (previous_buttons != allbuttons) {
-            previous_buttons = allbuttons;
-            printf("gamepad ");
-            for (int i = 0; i < sizeof(allbuttons) * 8 - 1; i++) {
-                if (i % 8 == 0) {
-                    printf(" ");
-                }
-                printf("%d ", (allbuttons & (1LL << i)) != 0);
-            }
-            printf("\n");
-        }
-    }
-    hori_free_gamepad(gamepad);
-    hori_close(device);
-    device = NULL;
-    return EXIT_SUCCESS;
-}
-
-#include "hori_yaml.h"
-
-int main_validate(const char *input_file) {
-    hori_yaml_parse_file(input_file);
-    return EXIT_SUCCESS;
-}
 
 #define ARG_CMD(cmd) arg_rex1(NULL, NULL, cmd, NULL, REG_ICASE, NULL);
 #define ARG_HELP() arg_lit0("h", "help", "show help message")
@@ -287,7 +140,7 @@ int main(int argc, char** argv)
             printf("show list help\n");
         }
         else {
-            exitcode = main_list();
+            exitcode = hori_cli_command_list();
         }
     }
     else if (set_errors == 0) {
@@ -311,7 +164,7 @@ int main(int argc, char** argv)
             printf("show test help\n");
         }
         else {
-            exitcode = main_test(*test_device->ival, *test_wait->ival);
+            exitcode = hori_cli_command_test(*test_device->ival, *test_wait->ival);
         }
     }
     else if (gamepad_errors == 0) {
@@ -319,7 +172,7 @@ int main(int argc, char** argv)
             printf("show gampaed help\n");
         }
         else {
-            exitcode = main_gamepad(*test_device->ival, *test_wait->ival);
+            exitcode = hori_cli_command_gamepad(*test_device->ival, *test_wait->ival);
         }
     }
     else if (validate_errors == 0) {
@@ -327,7 +180,7 @@ int main(int argc, char** argv)
             printf("show validate help\n");
         }
         else {
-            exitcode = main_validate(validate_input->filename[0]);
+            exitcode = hori_cli_command_validate(validate_input->filename[0]);
         }
     }
     else

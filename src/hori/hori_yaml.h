@@ -4,49 +4,29 @@
 
 #include <yaml.h>
 
-struct hori_config {
-    int product; // product number
-    struct hori_config_profile_list* list;
+#include <horiapi/hori_profile.h>
+
+enum hori_yaml_button_naming {
+    HID = 0,
+    CONFIG = 1, 
+    PLAYSTATION = 2,
+    XBOX = 3,
+    SWITCH = 4
 };
 
-struct hori_config_audio {
-    int enabled;
-    int volume_level;
-    int volume_mixer;
-    int mic_muted;
-    int mic_sensivity;
-};
-struct hori_config_feedback {
-    uint8_t feedback[6];
-};
-struct hori_profile_name {
-    wchar_t name[32];
-};
-// see https://github.com/meffie/libyaml-examples/blob/master/parse.c
-struct hori_config_profile {
-    int id; // unique number per mode
 
-    int dplsrs; 
-    struct hori_profile_name *name; // 
-    struct hori_audio_config *audio;
-    struct hori_feedback_config *feedback;
-    struct hori_sensor_list* sensors;
-    struct hori_button_config_list* buttons;
-    struct hori_stick_config_list* sticks;
-    struct hori_wheel_config* wheel;
+/** @brief Store information about config
+ */
+struct hori_yaml_config {
+    int platform; // format names
+    struct hori_profile* profile;
+    struct hori_yaml_config* next;
 };
 
-struct hori_config_audio* hori_yaml_parse_file(const char* fileName);
+int hori_yaml_config_parse_file(struct hori_yaml_config* config, FILE* file);
+int hori_yaml_config_parse_string(struct hori_yaml_config* config, const uint8_t* data, size_t size);
 
-struct hori_config_sensor {
-    uint8_t sensor[4]; // ?? how big
-};
-struct hori_sensor_list {
-    struct hori_config_sensor sensor;
-    struct hori_sensor_list* next;
-};
-struct hori_config_profile_list {
-    struct hori_config_profile config;
-    struct hori_config_profile_list* next;
-};
 
+int hori_yaml_config_emit_file(const struct hori_yaml_config* config, FILE* file);
+int hori_yaml_config_emit_string(const struct hori_yaml_config* config, uint8_t* data, size_t size, size_t* writeSize);
+int hori_yaml_config_emit(const struct hori_yaml_config* config, yaml_emitter_t* emitter);

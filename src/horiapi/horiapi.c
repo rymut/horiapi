@@ -53,7 +53,7 @@ hori_enumeration_t* hori_enumerate(hori_product_t product, hori_context_t* conte
     hori_enumeration_t** back = &front;
 
     for (struct hid_device_info* list_item = list_front; list_item != NULL; list_item = list_item->next) {
-        hori_device_config_t* device_config = hori_internal_find_device_config(ctx->devices, list_item);
+        hori_device_config_t* device_config = hori_internal_device_config_find(ctx->devices, list_item);
         if (device_config == NULL) {
             continue;
         }
@@ -140,3 +140,49 @@ struct hid_device_info* next(struct hid_device_info* list, hori_device_info_t* i
     return NULL;
 }
 
+
+hori_device_t* hori_open_path(char* path, hori_context_t* context) {
+    hid_device* hid_dev = hid_open_path(path);
+    if (hid_dev == NULL) {
+        // error no device found
+        return NULL;
+    }
+    struct hid_device_info* hid_dev_info = hid_get_device_info(hid_dev);
+    if (hid_dev_info == NULL) {
+        hid_close(hid_dev);
+        return NULL;
+    }
+    hori_context_t* ctx = context ? context : hori_internal_context();
+    hori_device_config_t* device_config = hori_internal_device_config_find(ctx->devices, hid_dev_info);
+    if (device_config == NULL) {
+        hid_close(hid_dev);
+        return NULL;
+    }
+    unsigned short product_id = hid_dev_info->product_id;
+    hid_close(hid_dev);
+    hori_device_platform_data_t* platform_data = hori_make_platform_data(device_config, path);
+    if (platform_data == NULL) {
+        return NULL;
+    }
+    hori_device_t* device = (hori_device_t*)calloc(1, sizeof(hori_device_t));
+    if (device == NULL) {
+        free(platform_data);
+        return NULL;
+    }
+    device->hori_api_version = HORI_API_VERSION;
+    device->platform_data = platform_data;
+    device->context = ctx;
+    device->config = device_config;
+
+    int result = -1;
+    if (device_config->hid_config_product_id == product_id) {
+        result = hori_internal_open(device, device_config->hid_config_product_id, device_config->hid_config_usage_page_gamepad, device_config->hid_config_usage_page_profile);
+    }
+    else {
+        result = hori_internal_open(device, device_config->hid_normal_product_id, device_config->hid_normal_usage_page_gamepad, device_config->hid_normal_usage_page_control);
+    }
+    if (result == -1) {
+        hori_close(device);
+    }
+    return device;
+}
