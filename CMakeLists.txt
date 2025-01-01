@@ -17,46 +17,10 @@ find_package(argtable3 REQUIRED)
 find_package(yaml REQUIRED)
 
 
-add_library(${PROJECT_NAME})
 
-target_sources(${PROJECT_NAME}
-    PUBLIC
-        "include/horiapi/horiapi.h"
-    PRIVATE
-        "src/horiapi/hori_alignof.h"
-        "src/horiapi/hori_assert.h"
-        "src/horiapi/hori_command.c"
-        "src/horiapi/hori_command.h"
-        "src/horiapi/hori_context.c"
-        "src/horiapi/hori_context.h"
-        "src/horiapi/hori_device.h"
-        "src/horiapi/hori_device.c"
-        "src/horiapi/hori_device_win32.h"
-        "src/horiapi/hori_endian.h"
-        "src/horiapi/hori_gamepad.c"
-        "src/horiapi/hori_gamepad.h"
-        "src/horiapi/hori_macros.h"
-        "src/horiapi/hori_profile.h"
-        "src/horiapi/hori_profile.c"
-        "src/horiapi/hori_state.c"
-        "src/horiapi/hori_time.h"
-        "src/horiapi/hori_utf8.c"
-        "src/horiapi/hori_utf8.h"
-        "src/horiapi/hori_version.c"
-        "src/horiapi/horiapi.c"
-        "src/horiapi/horiapi_reset_xinput.c"
-        "src/utf8/utf8.h"
-)
-target_include_directories(${PROJECT_NAME} PUBLIC "include" "src/horiapi" PRIVATE "include/horiapi")
-target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidapi)
-set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER $<TARGET_PROPERTY:${PROJECT_NAME},INTERFACE_SOURCES>)
 
-add_executable(hori)
-target_sources(hori PRIVATE "src/hori/main.c" "src/hori/hori_yaml.c" "src/hori/hori_yaml.h")
-target_link_libraries(hori PRIVATE horiapi argtable3::argtable3 yaml)
+add_subdirectory(src)
 
-include(GNUInstallDirs)
-install(TARGETS ${PROJECT_NAME} PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/horiapi)
 
 if (HORIAPI_BUILD_EXAMPLES)
     add_subdirectory(examples)

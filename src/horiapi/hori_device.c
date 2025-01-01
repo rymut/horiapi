@@ -218,3 +218,42 @@ int HORI_API_CALL hori_set_profile(hori_device_t* device, int profile_id, hori_p
     return hori_internal_write_profile_difference(device, profile_id, &profile->config);
 }
 
+int hori_internal_open(hori_device_t* device, unsigned short product_id, unsigned short usage_page_gamepad, unsigned short usage_page_control) {
+    if (device == NULL) {
+        return -1;
+    }
+
+    hid_close(device->control);
+    device->control = NULL;
+    hid_close(device->gamepad);
+    device->gamepad = NULL;
+
+    struct hid_device_info* infos = hid_enumerate(HORI_HID_VENDOR_ID, product_id);
+    for (struct hid_device_info* info = infos; info != NULL; info = info->next) {
+        if (info->vendor_id != HORI_HID_VENDOR_ID) {
+            continue;
+        }
+
+        struct hori_platform_data_t* pd = hori_make_platform_data(device->config, info->path);
+        if (!hori_platform_data_is_identical(pd, device->platform_data)) {
+            hori_free_platform_data(pd);
+            continue;
+        }
+        hori_free_platform_data(pd);
+
+        if (info->usage_page == usage_page_gamepad && device->gamepad == NULL) {
+            device->gamepad = hid_open_path(info->path);
+        }
+        else if (info->usage_page == usage_page_control && device->control == NULL) {
+            device->control = hid_open_path(info->path);
+        }
+        if (device->control && device->gamepad) {
+            break;
+        }
+    }
+    hid_free_enumeration(infos);
+    if (device->control || device->gamepad) {
+        return 1;
+    }
+    return -1;
+}

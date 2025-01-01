@@ -186,3 +186,17 @@ hori_device_t* hori_open_path(char* path, hori_context_t* context) {
     }
     return device;
 }
+
+int hori_send_heartbeat(hori_device_t* device)
+{
+    static uint8_t hori_internal_heartbeat_command[] = { 15, 170, 85, 90, 165 };
+    if (device == NULL) {
+        return -1;
+    }
+    if (device->control == NULL) {
+        return -1;
+    }
+    int write = hid_write(device->control, hori_internal_heartbeat_command, sizeof(hori_internal_heartbeat_command));
+    return write;
+}
+

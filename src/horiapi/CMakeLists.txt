@@ -13,8 +13,6 @@ target_sources(${PROJECT_NAME}
         "hori_context.h"
         "hori_device.h"
         "hori_device.c"
-        "hori_device_win32.h"
-        "hori_device_win32.c"
         "hori_endian.h"
         "hori_gamepad.c"
         "hori_gamepad.h"
@@ -28,8 +26,22 @@ target_sources(${PROJECT_NAME}
         "hori_version.c"
         "horiapi.c"
         "horiapi_reset_xinput.c"
- "hori_time_win32.h" "hori_utf_win32.c")
-
+        "hori_xinput.h"
+)
+if (WIN32)
+target_sources(${PROJECT_NAME}
+    PRIVATE
+    
+        "hori_device_win32.h"
+        "hori_device_win32.c"
+        "hori_string_win32.c"
+        "hori_string_win32.h"
+        "hori_time_win32.h"
+        "hori_utf_win32.c"
+        "hori_xinput_win32.h"
+        "hori_xinput_win32.c"
+)
+endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE hidapi::hidapi utf8)
 target_include_directories(${PROJECT_NAME} PUBLIC ../../include)
 set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER $<TARGET_PROPERTY:${PROJECT_NAME},INTERFACE_SOURCES>)
