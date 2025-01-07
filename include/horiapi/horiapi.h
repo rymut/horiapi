@@ -51,8 +51,14 @@
 */
 #define HORI_API_VERSION_STR HORI_API_TO_VERSION_STR(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
 
+#define HORI_AXIS_INDEX(axis) (axis > 0 ? (axis & 0xFF) : 0)
 
-/** @brief Get button index *
+/** @brief Get button index
+
+    @param[in] button The platform dependent button index
+
+    @returns
+        The macro returns platform independent button index
  */
 #define HORI_BUTTON_INDEX(button) (button > 0 ? (button & 0xFF) : 0)
 
@@ -189,6 +195,26 @@ extern "C" {
     };
 
     // https://www.playstation.com/en-us/support/hardware/ps5-button-functions/
+    enum hori_playstation_axis {
+        /** @brief Left Stick Left-Right */
+        HORI_PLAYSTATION_AXIS_X = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 1,
+        /** @brief Left Stick Up-Down */
+        HORI_PLAYSTATION_AXIS_Y = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 2,
+        /** @brief Right Stick Left-Right */
+        HORI_PLAYSTATION_AXIS_Z = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 3,
+        /** @brief Right Stick Up-Down */
+        HORI_PLAYSTATION_AXIS_RZ = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 4,
+        /** @brief L2 trigger */
+        HORI_PLAYSTATION_AXIS_RX = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 5,
+        /** @brief R2 trigger */
+        HORI_PLAYSTATION_AXIS_RY = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 6,
+        
+        HORI_PLAYSTATION_AXIS_LEFT_STICK_HORIZONTAL = HORI_PLAYSTATION_AXIS_X,
+        HORI_PLAYSTATION_AXIS_LEFT_STICK_VERTICAL = HORI_PLAYSTATION_AXIS_Y,
+        HORI_PLAYSTATION_AXIS_RIGHT_STICK_HORIZONTAL = HORI_PLAYSTATION_AXIS_Z,
+        HORI_PLAYSTATION_AXIS_RIGHT_STICK_VERTICAL = HORI_PLAYSTATION_AXIS_RZ,
+    };
+
     enum hori_playstation_button {
         HORI_PLAYSTATION_BUTTON_UP = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 1,
         HORI_PLAYSTATION_BUTTON_DOWN = HORI_CONTROLLER_PLAYSTATION4 | HORI_CONTROLLER_PLAYSTATION5 | 2,
@@ -228,6 +254,16 @@ extern "C" {
 
 
     };
+
+    enum hori_axis {
+        HORI_AXIS_X = 1,
+        HORI_AXIS_Y,
+        HORI_AXIS_Z,
+        HORI_AXIS_RZ,
+        HORI_AXIS_RX,
+        HORI_AXIS_RY,
+    };
+
     /** @brief Hori button used for mapping */
     enum hori_button {
         HORI_BUTTON_UP = 1,
@@ -578,17 +614,62 @@ extern "C" {
       */
 
     int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad, int index);
+
+    enum hoir_axis_property {
+        HORI_AXIS_VALUE,
+        HORI_AXIS_ZERO,
+        HORI_AXIS_MAXIMUM,
+        HORI_AXIS_MINIMUM,
+        HORI_AXIS_NORM_NUMERATOR,       // NORM = NUMERATOR/DENOMINATOR
+        HORI_AXIS_NORM_DENOMINATOR,
+    };
     /** @brief Get axis value
 
         @returns
             This function return -1 if axis is not present on gamepad, otherwise
             value between 0..<max-value> for axis
       */
+      // values:
+      // - for only positive axis from R=<0, +M>: VALUE = <R>, MAXIMUM=<M>, ZERO = 0, MINIMUM = 0, NORM = 1
+      // - for only positive axis from R=<+M, 0>: VALUE = <R>, MAXIMUM=<M>, ZERO = 0, MINIMUM = 0, NORM = 1
       //
+      // 
+      // - positive with offset: R=<+N, +M>: VALUE = <V> + ZERO, MAXIMUM=<M>, MINIMUM=0, ZERO=0, NORM=1 (  
+      // 
+
+
+        
+      // <-100, 0>, <0, 200> => -1, 2
+      // 0, 100, .., 300
+      //    norm = 300
+      //    zero = 100
+      // <128-255>
+      // <0, 255> ->
+      //    max = 255
+      //    min = 0
+      //    zero = 0
+      // <255, 0> ->
+      //    max = 0
+      //    min = 255
+      //    zero = 0
+      // <255, 127>
+      //    max = 127
+      //    min = 255
+      //    zero = 0
+      //    value = 
+      // <-255,0> ->
+      //    zero = 255
+      //    max = 255
+      //    min = 0
+      //    (max - zero)    / norm : max => 0  
+      //    (value - zero)  / norm : 
+      //    (min - zero)    / norm : min => -255 
+      // <-50,0> <0,100> -> max = 100, min = 50, zero = 50, norm = 1 => (value - zero)/norm
       // value 0 - min
       // value (max-min)/2 - zero
       // value uint16_t - max
     int HORI_API_CALL hori_get_axis(hori_gamepad_t* gamepad, int axis, int prop);
+    #define hori_get_axis_compute(value, zero, maximum, minimum, nominator, denominator) (value - zero)
     //https://blog.the.al/2023/01/01/ds4-reverse-engineering.html
     int HORI_API_CALL hori_get_touch_count(hori_gamepad_t* gamepad);
     /** */
@@ -674,6 +755,51 @@ extern "C" {
     char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile);
 
     int HORI_API_CALL hori_set_profile_name(hori_profile_t* profile, char const* name, int size);
+
+    enum hori_profile_audio_property {
+        HORI_PROFILE_AUDIO_ENABLED,
+        HORI_PROFILE_AUDIO_SPEAKER_LEVEL,
+        HORI_PROFILE_AUDIO_SPEAKER_MIXER,
+        HORI_PROFILE_AUDIO_MICROPHONE_MUTED,
+        HORI_PROFILE_AUDIO_MICROPHONE_SENSIFITY,
+    };
+
+    int HORI_API_CALL hori_set_profile_audio(hori_profile_t* profile, int prop, int value);
+    int HORI_API_CALL hori_get_profile_audio(hori_profile_t* profile, int prop);
+
+    enum hori_profile_button_property {
+        HORI_PROFILE_BUTTON_MAPPING_ENABLED,
+        HORI_PROFILE_BUTTON_MAPPING_VALUE,
+        HORI_PROFILE_BUTTON_DEADZONE_VALUE,
+        HORI_PROFILE_BUTTON_
+    };
+
+    int HORI_API_CALL hori_set_profile_button(hori_profile_t* profile, int button, int prop, int value);
+    int HORI_API_CALL hori_get_profile_button(hori_profile_t* profile, int button, int prop);
+
+    enum hori_profile_stick_mapping {
+        HORI_PROFILE_STICK_FUNCTION_DEFAULT = 0,
+        HORI_PROFILE_STICK_FUNCTION_LEFT_STICK = 1,
+        HORI_PROFILE_STICK_FUNCTION_RIGHT_STICK = 2,
+        HORI_PROFILE_STICK_FUNCTION_WHEEL = 3,
+    };
+    enum hori_profile_stick {
+        /** @brief Inner deadzone value in percent 0 - 100, negative value disable deadzone */
+        HORI_PROFILE_STICK_DEADZONE,
+        /** @brief Reverse horizontal axis value <= 0 disable axis, > 0 enable axis */
+        HORI_PROFILE_STICK_REVERSE_HORIZON_AXIS_ENABLED,
+        /** @brief Reverse vertical axis */
+        HORI_PROFILE_STICK_REVERSE_VERTIACAL_AXIS_ENABLED,
+        /** @brief Map other stick @see hori_profile_stick_function */
+        HORI_PROFILE_STICK_MAPPING,
+        /** @brief Set or disable setting maximum value level in percent 0-100 */
+        HORI_PROFILE_STICK_TARGET,
+        /** @brief Set agile value translating value to max peek function 0-100 value */
+        HORI_PROFILE_STICK_AGILE,
+    };
+    int HORI_API_CALL hori_set_profile_stick(hori_profile_t* profile, int stick, int prop, int value);
+    int HORI_API_CALL hori_get_profile_stick(hori_profile_t* profile, int stick, int prop);
+
     // Ideas of functions
     //      - int hori_store_profile(hori_device_t* device, int profile_id);
     // same as hori_set_profile(device, profile_id, hori_get_profile(device, profile_id))
@@ -692,6 +818,7 @@ extern "C" {
      * @brief open index
      */
     hori_device_t* hori_open_index(int index, hori_context_t* context);
+
 
 #ifdef __cplusplus
 } // extern "C" 

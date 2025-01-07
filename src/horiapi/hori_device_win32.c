@@ -10,6 +10,7 @@
 #include <devguid.h>
 #include <SetupAPI.h>
 #include <Cfgmgr32.h>
+#include <Devpropdef.h>
 
 #include <hidapi/hidapi.h>
 #include "hori_utf.h"
@@ -127,18 +128,18 @@ LPWSTR hori_device_win32_get_device_interface_property_string(LPCWSTR path, cons
     return buffer;
 }
 
-LPWSTR hori_win32_device_instance_get_string_list_property(DEVINST deviceInstance, const PDEVPROPKEY propertyKey, struct hori_wstring_list* list) {
+LPWSTR hori_win32_device_instance_get_wstring_list_property(DEVINST device_instance, const PDEVPROPKEY property_key, struct hori_wstring_list* list) {
     DEVPROPTYPE type = DEVPROP_TYPE_NULL;
     ULONG size = 0;
-    CM_Get_DevNode_PropertyW(deviceInstance, propertyKey, &type, NULL, &size, 0);
-    if (type != DEVPROP_TYPE_STRING_LIST || size < 2)
+    if (CR_BUFFER_SMALL != CM_Get_DevNode_PropertyW(device_instance, property_key, &type, NULL, &size, 0))
+        return NULL;
+    if (type != DEVPROP_TYPE_STRING_LIST || size < sizeof(WCHAR)*2)
         return NULL;
 
-    PBYTE propertyValue = (PBYTE)calloc(size, sizeof(char));
-    if (propertyValue == NULL) {
+    LPWSTR propertyValue = (LPWSTR)calloc(size/sizeof(WCHAR), sizeof(WCHAR));
+    if (propertyValue == NULL)
         return NULL;
-    }
-    if (CR_SUCCESS != CM_Get_DevNode_PropertyW(deviceInstance, propertyKey, &type, propertyValue, &size, 0)) {
+    if (CR_SUCCESS != CM_Get_DevNode_PropertyW(device_instance, property_key, &type, (LPWSTR)propertyValue, &size, 0)) {
         free(propertyValue);
         propertyValue = NULL;
     }
@@ -152,10 +153,22 @@ LPWSTR hori_win32_device_instance_get_string_list_property(DEVINST deviceInstanc
     return propertyValue;
 }
 
-PBYTE hori_win32_device_instance_get_property(DEVINST deviceInstance, const DEVPROPKEY* propertyKey) {
+int hori_win32_device_instance_get_guid_property(DEVINST device_instance, const PDEVPROPKEY property_key, GUID* property_value) {
     DEVPROPTYPE type = DEVPROP_TYPE_NULL;
     ULONG size = 0;
-    CM_Get_DevNode_PropertyW(deviceInstance, propertyKey, &type, NULL, &size, 0);
+    if (CR_BUFFER_SMALL != CM_Get_DevNode_PropertyW(device_instance, property_key, &type, NULL, &size, 0))
+        return -1;
+    if (type != DEVPROP_TYPE_GUID || size != sizeof(GUID))
+        return -1;
+    if (property_value != NULL && CR_SUCCESS != CM_Get_DevNode_PropertyW(device_instance, property_key, &type, (PBYTE)property_value, &size, 0))
+        return -1;
+    return 0;
+}
+
+PBYTE hori_win32_device_instance_get_property(DEVINST device_instance, const PDEVPROPKEY property_key) {
+    DEVPROPTYPE type = DEVPROP_TYPE_NULL;
+    ULONG size = 0;
+    CM_Get_DevNode_PropertyW(device_instance, property_key, &type, NULL, &size, 0);
 
     if (size == 0) {
         return NULL;
@@ -164,14 +177,14 @@ PBYTE hori_win32_device_instance_get_property(DEVINST deviceInstance, const DEVP
     if (propertyValue == NULL) {
         return NULL;
     }
-    if (CR_SUCCESS != CM_Get_DevNode_PropertyW(deviceInstance, propertyKey, &type, propertyValue, &size, 0)) {
+    if (CR_SUCCESS != CM_Get_DevNode_PropertyW(device_instance, property_key, &type, propertyValue, &size, 0)) {
         free(propertyValue);
         propertyValue = NULL;
     }
     return propertyValue;
 }
 
-struct hori_wstring_list hori_device_win32_get_device_interfaces_wstring_list(const wchar_t* device_id, LPCGUID interface_class_guid)
+struct hori_wstring_list hori_win32_device_get_device_interfaces_wstring_list(const wchar_t* device_id, LPCGUID interface_class_guid)
 {
     struct hori_wstring_list wstring_list;
     hori_init_wstring_list(&wstring_list);
@@ -207,24 +220,24 @@ struct hori_wstring_list hori_device_win32_get_device_interfaces_wstring_list(co
 }
 
 
-wchar_t* hori_device_win32_get_physical_device_intance_id(const char* path) {
+wchar_t* hori_win32_device_get_physical_device_intance_id(const char* path) {
     wchar_t* device_instance_id = NULL;
-    hori_device_win32_get_physical_device(path, &device_instance_id, NULL);
+    hori_win32_device_get_physical_device(path, &device_instance_id, NULL);
     return device_instance_id;
 }
 
 struct hori_wstring_list hori_device_win32_get_physical_device_location_paths(const char* path) {
     struct hori_wstring_list list = hori_empty_wstring_list();
-    hori_device_win32_get_physical_device(path, NULL, &list);
+    hori_win32_device_get_physical_device(path, NULL, &list);
     if (list.count == 0)
         hori_clear_wstring_list(&list);
     return list;
 }
 
-INT hori_device_win32_get_device_node(const char* path, PDEVINST devNode) {
-    if (path == NULL)
+int hori_win32_get_device_instance_from_path(const char* device_path, PDEVINST device_instance) {
+    if (device_path == NULL)
         return -1;
-    wchar_t* wpath = hori_internal_UTF8toUTF16(path);
+    wchar_t* wpath = hori_internal_UTF8toUTF16(device_path);
     if (wpath == NULL)
         return -1;
     wchar_t* deviceId = hori_device_win32_get_device_interface_property_string(wpath, &DEVPKEY_Device_InstanceId);
@@ -234,7 +247,7 @@ INT hori_device_win32_get_device_node(const char* path, PDEVINST devNode) {
     if (deviceId == NULL)
         return -1;
 
-    CONFIGRET cr = CM_Locate_DevNodeW(devNode, (DEVINSTID_W)deviceId, CM_LOCATE_DEVNODE_NORMAL);
+    CONFIGRET cr = CM_Locate_DevNodeW(device_instance, (DEVINSTID_W)deviceId, CM_LOCATE_DEVNODE_NORMAL);
     free(deviceId);
     deviceId = NULL;
     if (cr != CR_SUCCESS)
@@ -242,7 +255,7 @@ INT hori_device_win32_get_device_node(const char* path, PDEVINST devNode) {
     return 0;
 }
 
-int hori_device_win32_is_physical_device(DEVINST devNode) {
+int hori_win32_device_is_physical_device(DEVINST devNode) {
     const wchar_t prefix[] = L"\\Device\\USBPDO-";
     wchar_t* pdoName = (wchar_t*)hori_win32_device_instance_get_property(devNode, &DEVPKEY_Device_PDOName);
     if (pdoName == NULL) {
@@ -258,40 +271,32 @@ int hori_device_win32_is_physical_device(DEVINST devNode) {
     return 1;
 }
 
-int hori_device_win32_is_controller(DEVINST devNode) {
+int hori_win32_device_instance_is_controller(DEVINST device_instance) {
     const GUID XnaCompositeClass = { 0xd61ca365, 0x5af4, 0x4486, { 0x99, 0x8b, 0x9d, 0xb4, 0x73, 0x4c, 0x6c, 0xa3} };
-    GUID* classGuid = (GUID*)hori_win32_device_instance_get_property(devNode, &DEVPKEY_Device_ClassGuid);
-    if (classGuid == NULL)
+    GUID deviceClassGuid;
+    if (-1 == hori_win32_device_instance_get_guid_property(device_instance, &DEVPKEY_Device_ClassGuid, &deviceClassGuid))
         return 0;
-    const int result = IsEqualGUID(classGuid, &GUID_DEVCLASS_USB) || IsEqualGUID(classGuid, &XnaCompositeClass);
-    free(classGuid);
-    return result;
+    return IsEqualGUID(&deviceClassGuid, &GUID_DEVCLASS_USB) || IsEqualGUID(&deviceClassGuid, &XnaCompositeClass);
 }
 
-/** @brief Get information about physical device
-
-    @param path[in] The device or device endpoint to get physical device info
-    @param device_instance_id[out] Pointer to empty pointer where device instance id will be stored
-    @param location_paths[out] Pointer to empty string list where data locations will be stored
- */
-int hori_device_win32_get_physical_device(const char* path, wchar_t** device_instance_id, struct hori_wstring_list* location_paths) {
+int hori_win32_device_get_physical_device(const char* path, wchar_t** device_instance_id, struct hori_wstring_list* location_paths) {
 
     DEVINST devNode = 0;
-    if (hori_device_win32_get_device_node(path, &devNode) != 0) {
+    if (hori_win32_get_device_instance_from_path(path, &devNode) != 0) {
         return -1;
     }
 
     for (DEVINST devParent = devNode, devChild = 0; devParent != devChild; devChild = devParent, CM_Get_Parent(&devParent, devChild, 0))
     {
-        if (!hori_device_win32_is_physical_device(devParent)) {
+        if (!hori_win32_device_is_physical_device(devParent)) {
             continue;
         }
 
-        if (!hori_device_win32_is_controller(devParent)) {
+        if (!hori_win32_device_instance_is_controller(devParent)) {
             continue;
         }
         struct hori_wstring_list list = hori_empty_wstring_list();
-        if (hori_win32_device_instance_get_string_list_property(devParent, &DEVPKEY_Device_LocationPaths, &list)) {
+        if (hori_win32_device_instance_get_wstring_list_property(devParent, &DEVPKEY_Device_LocationPaths, &list)) {
             if (location_paths) {
                 *location_paths = list;
             }
@@ -305,67 +310,6 @@ int hori_device_win32_get_physical_device(const char* path, wchar_t** device_ins
         }
     }
     return -1;
-}
-/**
- * @brief Return location string list for windows as wchar
- * @return pointer (needs to be free by user)
- */
-wchar_t* hori_device_win32_get_hid_location_path(const char* hid_path, wchar_t** device_instance) {
-    if (hid_path == NULL) {
-        return NULL;
-    }
-    wchar_t* path = hori_internal_UTF8toUTF16(hid_path);
-    if (path == NULL) {
-        return NULL;
-    }
-    wchar_t* deviceId = hori_device_win32_get_device_interface_property_string(path, &DEVPKEY_Device_InstanceId);
-    free(path); path = NULL;
-    if (deviceId == NULL) {
-        return NULL;
-    }
-    DEVINST devNode = 0;
-    CONFIGRET result = CM_Locate_DevNodeW(&devNode, (DEVINSTID_W)deviceId, CM_LOCATE_DEVNODE_NORMAL);
-    free(deviceId); deviceId = NULL;
-    if (result != CR_SUCCESS) {
-        return NULL;
-    }
-    const GUID XnaComposite = { 0xd61ca365, 0x5af4, 0x4486, { 0x99, 0x8b, 0x9d, 0xb4, 0x73, 0x4c, 0x6c, 0xa3} };
-    for (DEVINST devParent = devNode, devChild = 0; devParent != devChild; devChild = devParent, CM_Get_Parent(&devParent, devChild, 0))
-    {
-        const wchar_t prefix[] = L"\\Device\\USBPDO-";
-        sizeof(prefix) / sizeof(wchar_t);
-        wchar_t* pdoName = (wchar_t*)hori_win32_device_instance_get_property(devParent, &DEVPKEY_Device_PDOName);
-        if (pdoName == NULL) {
-            continue;
-        }
-        if (wcsncmp(prefix, pdoName, sizeof(prefix) / sizeof(wchar_t)) == 0) {
-            free(pdoName);
-            pdoName = NULL;
-            continue;
-        }
-        free(pdoName);
-        pdoName = NULL;
-
-        GUID* classGuid = (GUID*)hori_win32_device_instance_get_property(devParent, &DEVPKEY_Device_ClassGuid);
-        if (classGuid == NULL) {
-            continue;
-        }
-        if (!(IsEqualGUID(classGuid, &GUID_DEVCLASS_USB) || IsEqualGUID(classGuid, &XnaComposite))) {
-            free(classGuid);
-            continue;
-        }
-        free(classGuid);
-
-        wchar_t* locationPaths = (wchar_t*)hori_win32_device_instance_get_property(devParent, &DEVPKEY_Device_LocationPaths);
-        if (locationPaths) {
-            if (device_instance != NULL) {
-                free(*device_instance);
-                *device_instance = (wchar_t*)hori_win32_device_instance_get_property(devParent, &DEVPKEY_Device_InstanceId);
-            }
-            return locationPaths;
-        }
-    }
-    return NULL;
 }
 
 hori_device_platform_data_t* hori_make_platform_data(const hori_device_config_t* device_config, const char* path) {

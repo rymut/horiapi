@@ -46,6 +46,8 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
     double wait_seconds = wait_miliseconds < 0 ? -1 : wait_miliseconds / 1000.0;
     hori_clock_t start = hori_clock_now();
     long long previous_buttons = 0;
+    int previous_axes[32];
+    memset(previous_axes, 0, sizeof(previous_axes));
     for (double diff = 0; wait_seconds < 0 || diff < wait_seconds; diff = hori_clock_diff(hori_clock_now(), start)) {
         // read gampade status
         if (hori_get_state(device) == HORI_STATE_CONFIG) {
@@ -56,23 +58,36 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
             printf("errror\n");
             break;
         }
+
+        long long allbuttons = 0;
         int buttons = hori_get_buttons(gamepad, 0);
         if (buttons == -1) {
             break;
         }
-        long long allbuttons = buttons;
+        allbuttons = buttons;
         buttons = hori_get_buttons(gamepad, 1);
         if (buttons != -1) {
             allbuttons = (allbuttons << sizeof(int) * 8) | buttons;
         }
-        if (previous_buttons != allbuttons) {
-            previous_buttons = allbuttons;
+        int state_change = previous_buttons != allbuttons;
+        previous_buttons = allbuttons;
+        int axis_count = 0;
+        for (int axis = HORI_CONTROLLER_CONFIG | 1, axis_value = -1; (axis_value = hori_get_axis(gamepad, axis, HORI_AXIS_VALUE)) != -1; ++axis) {
+            state_change = state_change || (previous_axes[axis - 1] != axis_value);
+            previous_axes[axis-1] = axis_value;
+            axis_count = axis;
+        }
+        if (state_change) {
             printf("gamepad ");
             for (int i = 0; i < sizeof(allbuttons) * 8 - 1; i++) {
                 if (i % 8 == 0) {
                     printf(" ");
                 }
                 printf("%d ", (allbuttons & (1LL << i)) != 0);
+            }
+            printf(" ");
+            for (int a = 0; a < axis_count; a++) {
+                printf("%3d ", previous_axes[a]);
             }
             printf("\n");
         }

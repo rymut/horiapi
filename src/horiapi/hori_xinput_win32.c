@@ -15,13 +15,16 @@ HANDLE OpenDeviceInterface(const wchar_t* path, BOOL readOnly)
 }
 
 // check if corntorelr is connected as player 1, 2, 3, 4
-int query_controller(const wchar_t* path) {
+/** @brief Get player id for xinput device
+
+    @returns
+        This function returns -1 on error (wrong path, wrong device), or 
+ */
+int hori_win32_xinput_device_get_player_id(const wchar_t* path) {
     if (path == NULL)
         return -1;
-
+    
     HANDLE handle = OpenDeviceInterface(path, FALSE);
-
-    BY_HANDLE_FILE_INFORMATION  result;
     if (handle == INVALID_HANDLE_VALUE)
         return -1;
 
@@ -33,18 +36,18 @@ int query_controller(const wchar_t* path) {
     // https://gist.github.com/mmozeiko/b8ccc54037a5eaf35432396feabbe435
     DWORD IOCTL_XUSB_GET_LED_STATE = 0x8000E008;
 
-    if (!DeviceIoControl(handle,
+    DeviceIoControl(handle,
         IOCTL_XUSB_GET_LED_STATE,
         gamepadStateRequest0101,
         3,
         ledStateData,
         3,
         &len,
-        NULL))
-    {
-        // GetLastError()
-        return -1;
-    }
+        NULL);
+
+    CloseHandle(handle);
+    handle = NULL;
+
     if (len != sizeof(ledStateData)) {
         return -1;
     }

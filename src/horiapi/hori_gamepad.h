@@ -8,21 +8,24 @@
 #include "hori_assert.h"
 #include "hori_alignof.h"
 
-struct hori_linear_value {
+union hori_linear_value {
+    struct {
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-    unsigned char positive : 1;
-    unsigned char value : 7;
+        unsigned char positive : 1;
+        unsigned char value : 7;
 #elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-    unsigned char value : 7;
-    unsigned char positive : 1;
+        unsigned char value : 7;
+        unsigned char positive : 1;
 #endif
+    };
+    unsigned char raw;
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_linear_value) == 1, "");
-HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_linear_value) == 1, "");
+HORI_STATIC_ASSERT(sizeof(union hori_linear_value) == 1, "");
+HORI_STATIC_ASSERT(HORI_ALIGNOF(union hori_linear_value) == 1, "");
 
 struct hori_stick_value {
-    struct hori_linear_value x;
-    struct hori_linear_value y;
+    union hori_linear_value x;
+    union hori_linear_value y;
 };
 HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_stick_value) == 1, "");
 
@@ -270,9 +273,9 @@ struct hori_config_generic_gamepad_report {
         };
     } buttons;
     // offset 9
-    struct hori_linear_value left_trigger;			// 1 Rx
+    union hori_linear_value left_trigger;			// 1 Rx
     // offset 10
-    struct hori_linear_value right_trigger;			// 1 Ry 
+    union hori_linear_value right_trigger;			// 1 Ry 
     // offset 11
     struct hori_ps4_extra_data extra;
     struct {
@@ -362,8 +365,8 @@ struct hori_config_spf023_gamepad_report {
         };
     } buttons;
     // offset 8
-    struct hori_linear_value left_trigger;			// 1 Rx
-    struct hori_linear_value right_trigger;			// 1 Ry 
+    union hori_linear_value left_trigger;			// 1 Rx
+    union hori_linear_value right_trigger;			// 1 Ry 
     // offset 10
     struct hori_ps4_extra_data extra;
     struct {
@@ -412,6 +415,7 @@ int hori_get_gamepad_button(struct hori_gamepad* gamepad, int button);
  */
 int hori_get_gamepad_dpad(struct hori_gamepad* gamepad);
 
+/*
 enum hori_axis {
     HORI_AXIS_X,
     HORI_AXIS_Y,
@@ -426,6 +430,7 @@ enum hori_axis {
     HORI_ANALOG_X_ROTATION,
     HORI_ANALOG_Y_ROTATION,
 };
+*/
 /** @brief Get axis
 
     @note

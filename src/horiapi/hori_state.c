@@ -79,12 +79,12 @@ int hori_internal_send_enter_config_xinput(hori_device_t* device) {
     GUID xboxClassGuid = { 0xec87f1e3, 0xc13b, 0x4100, { 0xb5, 0xf7, 0x8b, 0x84, 0xd5, 0x42, 0x60, 0xcb } };
     wchar_t* list = NULL;
     ULONG len = 0;
-    wchar_t* device_id = hori_device_win32_get_physical_device_intance_id(hid_get_device_info(device->gamepad)->path);
+    wchar_t* device_id = hori_win32_device_get_physical_device_intance_id(hid_get_device_info(device->gamepad)->path);
     if (device_id == NULL) {
         return -1;
     }
 
-    struct hori_wstring_list device_interfaces = hori_device_win32_get_device_interfaces_wstring_list(device_id, &xboxClassGuid);
+    struct hori_wstring_list device_interfaces = hori_win32_device_get_device_interfaces_wstring_list(device_id, &xboxClassGuid);
     free(device_id);
 
     if (device_interfaces.count < 1) {

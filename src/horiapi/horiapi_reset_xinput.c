@@ -10,6 +10,7 @@
 #include <devguid.h>
 #include <SetupAPI.h>
 #include <Cfgmgr32.h>
+#include <inttypes.h>
 
 #include <hidapi/hidapi.h>
 
@@ -18,12 +19,12 @@
 #pragma comment(lib, "Cfgmgr32")
 #pragma comment(lib, "Hid")
 
+
 #include "hori_device.h"
 #include "hori_device_win32.h"
 #include "hori_context.h"
 
 
-wchar_t* hori_device_win32_get_physical_device_intance_id(const char* path);
 static uint8_t hori_internal_get_firmware_command[] = { 15, 0, 0, 60, 9 };
 
 
@@ -74,8 +75,6 @@ static BOOL get_device_interface_property_guid(LPCWSTR path, const DEVPROPKEY* p
     return hori_device_win32_get_device_interface_property(path, prop, buffer_type, buffer, buffer_size);
 }
 
-
-#include <inttypes.h>
 
 
 

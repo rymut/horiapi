@@ -615,6 +615,7 @@ int hori_get_ps4_buttons(struct hori_ps4_gamepad_report* report, int group) {
     }
     return buttons;
 }
+
 int hori_get_controller_buttons(union hori_gamepad_report* report, int group, int controller, int (*get_controller_button)(union hori_gamepad_report*, int)) {
     if (report == NULL) {
         return -1;
@@ -668,3 +669,123 @@ int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad, int group) {
     }
     return -1;
 }
+
+int HORI_API_CALL hori_get_ps4_axis(const struct hori_ps4_gamepad_report* report, int axis, int prop) {
+    if (report == NULL)
+        return -1;
+    if (axis <= 0 || (axis & HORI_CONTROLLER_PLAYSTATION4) != HORI_CONTROLLER_PLAYSTATION4)
+        return -1;
+    if (HORI_AXIS_INDEX(axis) < HORI_PLAYSTATION_AXIS_X || HORI_AXIS_INDEX(axis) > HORI_PLAYSTATION_AXIS_RY)
+        return -1;
+
+    switch (prop) {
+    case HORI_AXIS_VALUE:
+        switch (HORI_AXIS_INDEX(axis)) {
+        case HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_X):
+            return report->left_stick_x;
+        case HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_Y):
+            return report->left_stick_y;
+        case HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_Z):
+            return report->right_stick_x;
+        case HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RZ):
+            return report->right_stick_y;
+        case HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RX):
+            return report->left_trigger;
+        case HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RY):
+            return report->right_trigger;
+        default:
+            return -1;
+        }
+    case HORI_AXIS_MINIMUM:
+        return 0;
+    case HORI_AXIS_MAXIMUM:
+        return 255;
+    case HORI_AXIS_ZERO:
+        if (HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RY) || HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RX))
+            return 0;
+        return 128;
+    case HORI_AXIS_NORM_NUMERATOR:
+        if (HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RY) || HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_PLAYSTATION_AXIS_RX))
+            return 255;
+        return 127;
+    case HORI_AXIS_NORM_DENOMINATOR:
+        return 1;
+    }
+    return -1;
+}
+
+int HORI_API_CALL hori_get_ps5_axis(hori_gamepad_t* gamepad, int axis, int prop) {
+    return -1;
+}
+
+int HORI_API_CALL hori_get_xinput_axis(hori_gamepad_t* gamepad, int axis, int prop) {
+    return -1;
+}
+
+int HORI_API_CALL hori_get_config_axis(union hori_gamepad_report* report, int axis, int prop) {
+    if (report == NULL)
+        return -1;
+    if (axis <= 0 || (axis & HORI_CONTROLLER_CONFIG) != HORI_CONTROLLER_CONFIG)
+        return -1;
+    if (HORI_AXIS_INDEX(axis) < HORI_AXIS_X || HORI_AXIS_INDEX(axis) > HORI_AXIS_RY)
+        return -1;
+
+    switch (prop) {
+    case HORI_AXIS_VALUE:
+        switch (HORI_AXIS_INDEX(axis)) {
+        case HORI_AXIS_INDEX(HORI_AXIS_X):
+            return report->config.spf023.left_stick.x.raw;
+        case HORI_AXIS_INDEX(HORI_AXIS_Y):
+            return report->config.spf023.left_stick.y.raw;
+        case HORI_AXIS_INDEX(HORI_AXIS_Z):
+            return report->config.spf023.right_stick.x.raw;
+        case HORI_AXIS_INDEX(HORI_AXIS_RZ):
+            return report->config.spf023.right_stick.y.raw;
+        case HORI_AXIS_INDEX(HORI_AXIS_RX):
+            return report->config.spf023.left_trigger.raw;
+        case HORI_AXIS_INDEX(HORI_AXIS_RY):
+            return report->config.spf023.right_trigger.raw;
+        default:
+            return -1;
+        }
+    case HORI_AXIS_MINIMUM:
+        return 0;
+    case HORI_AXIS_MAXIMUM:
+        return 255;
+    case HORI_AXIS_ZERO:
+        if (HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_AXIS_RY) || HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_AXIS_RX))
+            return 0;
+        return 128;
+    case HORI_AXIS_NORM_NUMERATOR:
+        if (HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_AXIS_RY) || HORI_AXIS_INDEX(axis) == HORI_AXIS_INDEX(HORI_AXIS_RX))
+            return 255;
+        return 127;
+    case HORI_AXIS_NORM_DENOMINATOR:
+        return 1;
+    }
+    return -1;
+}
+
+int HORI_API_CALL hori_get_axis(hori_gamepad_t* gamepad, int axis, int prop) {
+    if (gamepad == NULL) {
+        return -1;
+    }
+    const int controller = axis & gamepad->device_controller;
+    if (!controller) {
+        // if device_controller == CONFIG then 0 is set in both data
+        // wrong data
+        //return -1;
+    }
+    switch (controller) {
+    case HORI_CONTROLLER_PLAYSTATION4:
+        return hori_get_ps4_axis(&gamepad->report.ps4, axis, prop);
+    case HORI_CONTROLLER_PLAYSTATION5:
+        return hori_get_ps5_axis(&gamepad->report.ps5, axis, prop);
+    case HORI_CONTROLLER_XINPUT:
+        return hori_get_xinput_axis(&gamepad->report.xinput, axis, prop);
+    case HORI_CONTROLLER_CONFIG:
+        return hori_get_config_axis(&gamepad->report, axis, prop);
+    }
+    return -1;
+}
+
