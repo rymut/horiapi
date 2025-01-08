@@ -379,8 +379,41 @@ struct hori_config_spf023_gamepad_report {
     // offset 48
 };
 
+union hori_xinput_linear_value {
+    struct {
+        unsigned char lower;
+        unsigned char upper;
+    };
+    unsigned char raw[2];
+};
+
+// alternative can be raw data from xinput https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_state
+// here is hid xinput report
 struct hori_xinput_gamepad_report {
     unsigned char report_id;
+    union hori_xinput_linear_value left_stick_x;
+    union hori_xinput_linear_value left_stick_y;
+    union hori_xinput_linear_value right_stick_x;
+    union hori_xinput_linear_value right_stick_y;
+    union hori_xinput_linear_value triggers;
+    struct hori_input_buttons {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+            unsigned char b0 : 1;
+            unsigned char b1: 1;
+            unsigned char b2: 1;
+            unsigned char b3: 1;
+            unsigned char b4: 1;
+            unsigned char b5: 1;
+            unsigned char b6 : 1;
+            unsigned char b7 : 1;
+            unsigned char b8 : 1;
+            unsigned char b9 : 1;
+            unsigned char hat_buttons: 3;
+            unsigned char hat_released : 1;
+            unsigned char unused : 2;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+#endif 
+    } buttons;
 };
 
 struct hori_gamepad {

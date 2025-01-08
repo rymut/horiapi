@@ -1,5 +1,7 @@
 project(hori LANGUAGES C)
 
+find_package(Curses REQUIRED)
+
 add_executable(${PROJECT_NAME})
 target_sources(${PROJECT_NAME}
     PRIVATE
@@ -22,5 +24,5 @@ target_sources(${PROJECT_NAME}
     hori_yaml_product.h
     hori_yaml_profile.c
     hori_yaml_profile.h
- "hori_yaml_button.h" "command/validate.c" "command/list.h" "command/test.h" "command/validate.h" "command/args.h")
-target_link_libraries(${PROJECT_NAME} PRIVATE horiapi horiapi-internal argtable3::argtable3 yaml)
+ "hori_yaml_button.h" "command/validate.c" "command/list.h" "command/test.h" "command/validate.h" "command/args.h" "tui/tui.h" "tui/tui.c")
+target_link_libraries(${PROJECT_NAME} PRIVATE horiapi horiapi-internal argtable3::argtable3 yaml Curses::Curses)

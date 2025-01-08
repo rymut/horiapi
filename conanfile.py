@@ -18,7 +18,8 @@ class HoriApiConan(ConanFile):
         "hidapi/0.14.0",
         "jansson/2.14",
         "argtable3/3.2.2",
-        "libyaml/0.2.5"
+        "libyaml/0.2.5",
+        "ncurses/6.5",
     ]
     options = {
         "shared": [True, False],
