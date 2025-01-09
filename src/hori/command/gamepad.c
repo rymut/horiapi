@@ -10,6 +10,7 @@
 #include <horiapi/hori_time.h>
 
 struct axis {
+    int name;
     int value;
     int max;
     int min;
@@ -19,8 +20,81 @@ struct axis {
         int denumerator;
     } norm;
 };
+
+const char* hori_ps_axis_full_names[] = {
+    "Not Available",
+    "Left Stick Horizontal",
+    "Left Stick Vertical",
+    "Right Stick Horizontal",
+    "Right Stick Vertical",
+    "Left Trigger",
+    "Right Trigger"
+};
+
+const char* hori_ps_axis_long_names[] = {
+    "N/A",
+    "LSh",
+    "LSv",
+    "RSh",
+    "RSv",
+    "LT",
+    "RT",
+};
+
+const char * hori_ps_axis_short_names[] = {
+        "NA",
+        "X",
+        "Y",
+        "Rz",
+        "Rx",
+        "Ry",
+};
+        
+struct AxisNaming {
+    int controller;
+    int count;
+    const char** short_names;
+    const char** long_names;
+    const char** full_names;
+};
+
+const struct AxisNaming platformAxisNaming[] = {
+    {HORI_CONTROLLER_ANY, 0, NULL, NULL, NULL}, // HID
+    {HORI_CONTROLLER_CONFIG, 0, NULL, NULL, NULL}, // CONFIG
+    {HORI_CONTROLLER_PLAYSTATION4, sizeof(hori_ps_axis_short_names) / sizeof(hori_ps_axis_short_names[0]), hori_ps_axis_short_names, hori_ps_axis_long_names, hori_ps_axis_full_names},
+    {HORI_CONTROLLER_PLAYSTATION5, sizeof(hori_ps_axis_short_names) / sizeof(hori_ps_axis_short_names[0]), hori_ps_axis_short_names, hori_ps_axis_long_names, hori_ps_axis_full_names},
+    {HORI_CONTROLLER_XINPUT, NULL, NULL, NULL}
+};
+
+const struct AxisNaming* get_axis_names(int name) {
+    int controller = HORI_GET_CONTROLLER(name);
+    for (int i = 0; i < sizeof(platformAxisNaming) / sizeof(platformAxisNaming[0]); i++) {
+        if (platformAxisNaming[i].controller & controller) {
+            return platformAxisNaming + i;
+        }
+    }
+    return NULL;
+}
+const char* get_axis_name_from(const struct AxisNaming* naming, int name, int length) {
+    if (naming == NULL)
+        return NULL;
+    int index = HORI_AXIS_INDEX(name);
+    if (index < 0 || index >= naming->count)
+        return NULL;
+    if (length <= 0 && naming->short_names)
+        return naming->short_names[index];
+    if (length == 1 && naming->long_names)
+        return naming->long_names[index];
+    if (length >= 2 && naming->full_names)
+        return naming->full_names[index];
+    return NULL;
+}
+const char* get_axis_name(int name, int length) {
+    return get_axis_name_from(get_axis_names(name), name, length);
+}
 #define TUI_MAX_WIDTH 256
-void drawMeter(WINDOW* win, const char* name, struct axis* a, int row) {
+
+void drawMeter(WINDOW* win, struct axis* a, int row) {
     char buffer[TUI_MAX_WIDTH];
     memset(buffer, 0, sizeof(buffer));
 
@@ -30,8 +104,11 @@ void drawMeter(WINDOW* win, const char* name, struct axis* a, int row) {
     int len = border * 2;
     addch('[');
     len++;
-    len += strlen(name);
-    addstr(name);
+    const char *name = get_axis_name(a->name, 0);
+    if (name != NULL) {
+        len += strlen(name);
+        addstr(name);
+    }
     double value = 0;
     value = a->value - a->zero;
     if (a->value > a->zero && a->zero != a->min && a->zero != a->max) {
@@ -40,9 +117,9 @@ void drawMeter(WINDOW* win, const char* name, struct axis* a, int row) {
 
     value = value / (a->norm.numerator / (float)a->norm.denumerator);
     sprintf(buffer, "% 5.3lf", value);
-    if (fabs(value) > 1.0) {
+    if ((int)(value * 1000) == 992) {
         int i = 90;
-        sprintf(buffer, "error");
+        //  sprintf(buffer, "error");
     }
     len += strlen(buffer);
     len += 1;
@@ -53,7 +130,7 @@ void drawMeter(WINDOW* win, const char* name, struct axis* a, int row) {
     addch(']');
 }
 
-int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
+int hori_cli_command_gamepad(int device_id, int wait_miliseconds, int enter_config_mode) {
     char* device_path = NULL;
     hori_enumeration_t* devices = hori_enumerate(HORI_PRODUCT_ANY, NULL);
     if (devices == NULL) {
@@ -68,19 +145,23 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
     }
     hori_free_enumerate(devices);
 
-    if (device_path == 0) {
+    if (device_path == NULL) {
         printf("Device id %d not found\n", device_id);
         return EXIT_FAILURE;
     }
     hori_device_t* device = hori_open_path(device_path, NULL);
+    free(device_path);
+    device_path = NULL;
+
     if (device == NULL) {
         printf("cannot open device %d\n", device_id);
         return EXIT_FAILURE;
     }
-    if (hori_get_state(device) != HORI_STATE_CONFIG) {
-        hori_set_state(device, HORI_STATE_CONFIG);
+    const int hori_state = enter_config_mode ? HORI_STATE_CONFIG : HORI_STATE_NORMAL;
+    if (hori_get_state(device) != hori_state) {
+        hori_set_state(device, hori_state);
     }
-    if (hori_get_state(device) != HORI_STATE_CONFIG) {
+    if (hori_get_state(device) != hori_state) {
         hori_close(device);
         return EXIT_FAILURE;
     }
@@ -90,7 +171,7 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
         hori_close(device);
         return EXIT_FAILURE;
     }
-    if (hori_read_gamepad_timeout(device, gamepad, 150)  == -1) {
+    if (hori_read_gamepad_timeout(device, gamepad, 150) == -1) {
         printf("errror\n");
     }
 
@@ -101,14 +182,27 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
     struct axis previous_axes[32];
     memset(previous_axes, 0, sizeof(previous_axes));
 
-
-    for (int axis = HORI_CONTROLLER_CONFIG | 1, run = 1; run; ++axis) {
+    for (int axis = 1, run = 1; run; ++axis) {
+        previous_axes[axis - 1].name = hori_get_axis(gamepad, axis, HORI_AXIS_NAME);
         previous_axes[axis - 1].max = hori_get_axis(gamepad, axis, HORI_AXIS_MAXIMUM);
         previous_axes[axis - 1].min = hori_get_axis(gamepad, axis, HORI_AXIS_MINIMUM);
         previous_axes[axis - 1].norm.denumerator = hori_get_axis(gamepad, axis, HORI_AXIS_NORM_DENOMINATOR);
         previous_axes[axis - 1].norm.numerator = hori_get_axis(gamepad, axis, HORI_AXIS_NORM_NUMERATOR);
         previous_axes[axis - 1].zero = hori_get_axis(gamepad, axis, HORI_AXIS_ZERO);
         run = previous_axes[axis - 1].max >= 0;
+    }
+
+    struct axis previous_touch[32];
+    memset(previous_touch, 0, sizeof(previous_touch));
+
+    for (int axis = 1, run = 1; axis <= 4; ++axis) {
+        previous_touch[axis - 1].name = hori_get_touch(gamepad, axis, HORI_TOUCH_NAME);
+        previous_touch[axis - 1].max = hori_get_touch(gamepad, axis, HORI_TOUCH_MAXIMUM);
+        previous_touch[axis - 1].min = hori_get_touch(gamepad, axis, HORI_TOUCH_MINIMUM);
+        previous_touch[axis - 1].norm.denumerator = hori_get_touch(gamepad, axis, HORI_TOUCH_NORM_DENOMINATOR);
+        previous_touch[axis - 1].norm.numerator = hori_get_touch(gamepad, axis, HORI_TOUCH_NORM_NUMERATOR);
+        previous_touch[axis - 1].zero = hori_get_touch(gamepad, axis, HORI_TOUCH_ZERO);
+        run = previous_touch[axis - 1].max >= 0;
     }
     initscr();
     cbreak();
@@ -128,7 +222,7 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
         long long allbuttons = 0;
         int buttons = hori_get_buttons(gamepad, 0);
         if (buttons == -1) {
-            break;
+            //   break;
         }
         allbuttons = buttons;
         buttons = hori_get_buttons(gamepad, 1);
@@ -138,10 +232,16 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
         int state_change = previous_buttons != allbuttons;
         previous_buttons = allbuttons;
         int axis_count = 0;
-        for (int axis = HORI_CONTROLLER_CONFIG | 1, axis_value = -1; (axis_value = hori_get_axis(gamepad, axis, HORI_AXIS_VALUE)) != -1; ++axis) {
+        for (int axis = 1, axis_value = -1; (axis_value = hori_get_axis(gamepad, axis, HORI_AXIS_VALUE)) != -1; ++axis) {
             state_change = state_change || (previous_axes[axis - 1].value != axis_value);
             previous_axes[axis - 1].value = axis_value;
             axis_count = axis;
+        }
+        int touch_count = 0;
+        for (int touch = 1, axis_value = -1; (axis_value = hori_get_touch(gamepad, touch, HORI_TOUCH_VALUE)) != -1; ++touch) {
+            state_change = state_change || (previous_touch[touch - 1].value != axis_value);
+            previous_touch[touch - 1].value = axis_value;
+            touch_count = touch;
         }
         if (state_change) {
             printf("gamepad ");
@@ -154,7 +254,11 @@ int hori_cli_command_gamepad(int device_id, int wait_miliseconds) {
 
             printf(" ");
             for (int a = 0; a < axis_count; a++) {
-                drawMeter(stdscr, "X", previous_axes + a, a + 1);
+                drawMeter(stdscr, previous_axes + a, a + 1);
+            }
+            printf(" ");
+            for (int a = 0; a < touch_count; a++) {
+                drawMeter(stdscr, previous_touch + a, a + 10);
             }
             printf("\n");
         }

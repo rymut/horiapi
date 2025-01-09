@@ -52,7 +52,7 @@
 #define HORI_API_VERSION_STR HORI_API_TO_VERSION_STR(HORI_API_VERSION_MAJOR, HORI_API_VERSION_MINOR, HORI_API_VERSION_PATCH)
 
 #define HORI_CONTROLER_INDEX(axis_or_button) 
-#define HORI_GET_CONTROLLER(axis_or_button) ((axis>>8)<<8)
+#define HORI_GET_CONTROLLER(axis_or_button) ((axis_or_button>>8)<<8)
 #define HORI_AXIS_INDEX(axis) (axis > 0 ? (axis & 0xFF) : 0)
 
 /** @brief Get button index
@@ -636,6 +636,7 @@ extern "C" {
 
     enum hoir_axis_property {
         HORI_AXIS_VALUE,
+        HORI_AXIS_NAME,
         HORI_AXIS_ZERO,
         HORI_AXIS_MAXIMUM,
         HORI_AXIS_MINIMUM,
@@ -688,11 +689,36 @@ extern "C" {
       // value (max-min)/2 - zero
       // value uint16_t - max
     int HORI_API_CALL hori_get_axis(hori_gamepad_t* gamepad, int axis, int prop);
-#define hori_get_axis_compute(value, zero, maximum, minimum, nominator, denominator) (value - zero)
+
+    enum hori_touch_axis {
+        HORI_TOUCH_AXIS_NA,
+        HORI_TOUCH_AXIS_X,
+        HORI_TOUCH_AXIS_Y,
+    };
+    enum hori_touch_property {
+        HORI_TOUCH_ID,
+        HORI_TOUCH_TIMESTAMP,
+        HORI_TOUCH_DOWN,
+        HORI_TOUCH_AXIS,
+
+        HORI_TOUCH_VALUE,
+        HORI_TOUCH_NAME,
+        HORI_TOUCH_ZERO,
+        HORI_TOUCH_MAXIMUM,
+        HORI_TOUCH_MINIMUM,
+        HORI_TOUCH_NORM_NUMERATOR,       // NORM = NUMERATOR/DENOMINATOR
+        HORI_TOUCH_NORM_DENOMINATOR,
+    };
+
+    enum hori_touch {
+        HORI_TOUCH_NA,
+        HORI_TOUCH_1_X,
+        HORI_TOUCH_2_Y,
+    };
     //https://blog.the.al/2023/01/01/ds4-reverse-engineering.html
     int HORI_API_CALL hori_get_touch_count(hori_gamepad_t* gamepad);
     /** */
-    int HORI_API_CALL hori_touch(hori_gamepad_t* gamepad, int touch, int prop);
+    int HORI_API_CALL hori_get_touch(hori_gamepad_t* gamepad, int touch, int prop);
 
     enum hori_sensor_property {
         HORI_SENSOR_VALUE = 0,
@@ -704,7 +730,7 @@ extern "C" {
         HORI_UNIT_NORMALIZED,
         HORI_UNIT_SIGNED_NORMALIZED,
         HORI_UNIT_ACCEL_VELOCITY,
-        HORI_UNIT_GROY_ROTATION_DEEGRESS_PER_SECOND,
+        HORI_UNIT_GYRO_ROTATION_DEEGRESS_PER_SECOND,
     };
 
     // https://github.com/JibbSmart/JoyShockLibrary/blob/master/JoyShockLibrary/InputHelpers.cpp

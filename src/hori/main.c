@@ -25,6 +25,7 @@ int main_get() {
 
 
 #define ARG_CMD(cmd) arg_rex1(NULL, NULL, cmd, NULL, REG_ICASE, NULL);
+#define ARG_CONFIG() arg_lit0("c", "config", "enter config mode")
 #define ARG_HELP() arg_lit0("h", "help", "show help message")
 #define ARG_DEVICE() arg_int1("d", "device", "<device>", "device number")
 #define ARG_PROFILE() arg_int0("p", "profile", "<profile>", "profile number")
@@ -92,9 +93,10 @@ int main(int argc, char** argv)
     struct arg_rex* gamepad_cmd = ARG_CMD("gamepad");
     struct arg_lit* gamepad_help = ARG_HELP();
     struct arg_int* gamepad_device = ARG_DEVICE();
+    struct arg_lit* gamepad_config = ARG_CONFIG();
     struct arg_int* gamepad_wait = arg_int0("w", "wait", "<MILISECONDS>", "run test for miliseconds after connection (exclude connection time)");
     struct arg_end* gamepad_end = arg_end(20);
-    void* gamepad_argtable[] = { gamepad_cmd, gamepad_help, gamepad_device, gamepad_wait, gamepad_end };
+    void* gamepad_argtable[] = { gamepad_cmd, gamepad_help, gamepad_device, gamepad_config, gamepad_wait, gamepad_end };
     int gamepad_errors = 0;
 
     struct arg_rex* validate_cmd = ARG_CMD("validate");
@@ -172,7 +174,7 @@ int main(int argc, char** argv)
             printf("show gampaed help\n");
         }
         else {
-            exitcode = hori_cli_command_gamepad(*test_device->ival, *test_wait->ival);
+            exitcode = hori_cli_command_gamepad(*gamepad_device->ival, *gamepad_wait->ival, gamepad_config->count);
         }
     }
     else if (validate_errors == 0) {

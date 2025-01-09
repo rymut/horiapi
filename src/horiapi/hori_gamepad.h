@@ -51,6 +51,19 @@ struct hori_ps4_touch_finger_data {
     uint8_t index : 7;
 #endif
 };
+struct hori_ps4_touch_finger_position {
+    short x;
+    short y;
+};
+/** @brief Get Touch
+
+    @param[in] finger_data The finger data
+    @param[in] axis the axis to extract 0 - for x, 1 for y
+
+    @returns
+        The function returns -1 on invalid arguments or no touch present at the moment otherwise position of touch in 12 bit range
+ */
+int hori_ps4_get_touch_finger_data(const struct hori_ps4_touch_finger_data* finger_data, int axis);
 
 HORI_STATIC_ASSERT(sizeof(struct hori_ps4_touch_finger_data) == 4, "");
 HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_ps4_touch_finger_data) == 1, "");
@@ -387,10 +400,13 @@ union hori_xinput_linear_value {
     unsigned char raw[2];
 };
 
+HORI_STATIC_ASSERT(sizeof(union hori_xinput_linear_value) == 2, "");
+HORI_STATIC_ASSERT(HORI_ALIGNOF(union hori_xinput_linear_value) == 1, "");
+
 // alternative can be raw data from xinput https://learn.microsoft.com/en-us/windows/win32/api/xinput/ns-xinput-xinput_state
 // here is hid xinput report
 struct hori_xinput_gamepad_report {
-    unsigned char report_id;
+    // single report only - unsigned char report_id;
     union hori_xinput_linear_value left_stick_x;
     union hori_xinput_linear_value left_stick_y;
     union hori_xinput_linear_value right_stick_x;
