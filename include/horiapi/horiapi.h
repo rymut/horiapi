@@ -274,8 +274,51 @@ extern "C" {
 
     };
 
+    enum hori_button_property {
+        HORI_BUTTON_VALUE,
+        HORI_BUTTON_NAME,
+    };
+
+    enum hoir_axis_property {
+        HORI_AXIS_VALUE = HORI_BUTTON_VALUE,
+        HORI_AXIS_NAME = HORI_BUTTON_NAME,
+
+        HORI_AXIS_ZERO,
+        HORI_AXIS_MAXIMUM,
+        HORI_AXIS_MINIMUM,
+        HORI_AXIS_NORM_NUMERATOR,       // NORM = NUMERATOR/DENOMINATOR
+        HORI_AXIS_NORM_DENOMINATOR,
+    };
+
+    enum hori_touch_property {
+        HORI_TOUCH_VALUE,
+        HORI_TOUCH_NAME,
+
+        HORI_TOUCH_ZERO,
+        HORI_TOUCH_MAXIMUM,
+        HORI_TOUCH_MINIMUM,
+        HORI_TOUCH_NORM_NUMERATOR,       // NORM = NUMERATOR/DENOMINATOR
+        HORI_TOUCH_NORM_DENOMINATOR,
+
+        HORI_TOUCH_ID,
+        HORI_TOUCH_TIMESTAMP,
+        HORI_TOUCH_DOWN,
+        HORI_TOUCH_AXIS,
+    };
+
+    enum hori_touch_axis {
+        HORI_TOUCH_AXIS_NA,
+        HORI_TOUCH_AXIS_X,
+        HORI_TOUCH_AXIS_Y,
+    };
+    enum hori_touch {
+        HORI_TOUCH_NA,
+        HORI_TOUCH_1_X,
+        HORI_TOUCH_2_Y,
+    };
+
     enum hori_axis {
-        HORI_AXIS_X = 1,
+        HORI_AXIS_X = 0,
         HORI_AXIS_Y,
         HORI_AXIS_Z,
         HORI_AXIS_RZ,
@@ -634,15 +677,6 @@ extern "C" {
 
     int HORI_API_CALL hori_get_buttons(hori_gamepad_t* gamepad, int index);
 
-    enum hoir_axis_property {
-        HORI_AXIS_VALUE,
-        HORI_AXIS_NAME,
-        HORI_AXIS_ZERO,
-        HORI_AXIS_MAXIMUM,
-        HORI_AXIS_MINIMUM,
-        HORI_AXIS_NORM_NUMERATOR,       // NORM = NUMERATOR/DENOMINATOR
-        HORI_AXIS_NORM_DENOMINATOR,
-    };
     /** @brief Get axis value
 
         @returns
@@ -690,31 +724,6 @@ extern "C" {
       // value uint16_t - max
     int HORI_API_CALL hori_get_axis(hori_gamepad_t* gamepad, int axis, int prop);
 
-    enum hori_touch_axis {
-        HORI_TOUCH_AXIS_NA,
-        HORI_TOUCH_AXIS_X,
-        HORI_TOUCH_AXIS_Y,
-    };
-    enum hori_touch_property {
-        HORI_TOUCH_ID,
-        HORI_TOUCH_TIMESTAMP,
-        HORI_TOUCH_DOWN,
-        HORI_TOUCH_AXIS,
-
-        HORI_TOUCH_VALUE,
-        HORI_TOUCH_NAME,
-        HORI_TOUCH_ZERO,
-        HORI_TOUCH_MAXIMUM,
-        HORI_TOUCH_MINIMUM,
-        HORI_TOUCH_NORM_NUMERATOR,       // NORM = NUMERATOR/DENOMINATOR
-        HORI_TOUCH_NORM_DENOMINATOR,
-    };
-
-    enum hori_touch {
-        HORI_TOUCH_NA,
-        HORI_TOUCH_1_X,
-        HORI_TOUCH_2_Y,
-    };
     //https://blog.the.al/2023/01/01/ds4-reverse-engineering.html
     int HORI_API_CALL hori_get_touch_count(hori_gamepad_t* gamepad);
     /** */

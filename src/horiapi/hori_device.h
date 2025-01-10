@@ -23,9 +23,21 @@ extern "C" {
       */
     void hori_free_platform_data(hori_device_platform_data_t* platform_data);
 
+    /** @brief Check if platform data is identical
+
+        @param[in] a The first object
+        @param[in] b The second object
+
+        @returns
+            This function returns 1 if obejct are identical:
+                @p a and @p b is the same adress,
+                @p a and @p b is platfrom data extracted from the same phisical usb port and points to the same device (platform dependent implementation)
+      */
+    int hori_platform_data_is_identical(const hori_device_platform_data_t* a, const hori_device_platform_data_t* b);
+
     struct hori_device_profile {
         int id;
-        struct hori_profile *profile;
+        struct hori_profile* profile;
         struct hori_device_profile* next;
     };
 

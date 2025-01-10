@@ -234,7 +234,7 @@ int hori_internal_open(hori_device_t* device, unsigned short product_id, unsigne
             continue;
         }
 
-        struct hori_platform_data_t* pd = hori_make_platform_data(device->config, info->path);
+        hori_device_platform_data_t* pd = hori_make_platform_data(device->config, info->path);
         if (!hori_platform_data_is_identical(pd, device->platform_data)) {
             hori_free_platform_data(pd);
             continue;

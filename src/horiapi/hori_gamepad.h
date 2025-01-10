@@ -98,8 +98,6 @@ struct hori_ps4_extra_data {
     uint8_t plugged_headphones : 1;
     uint8_t plugged_power_cable : 1;
     uint8_t power_percent : 4; // 0x00-0x0A or 0x01-0x0B if plugged int
-#else
-#error "not known"
 #endif 
 #if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
     uint8_t unknown_ext1 : 1; // ExtCapableOfExtraData?
@@ -111,8 +109,6 @@ struct hori_ps4_extra_data {
     uint8_t not_connected : 1; // Used by dongle to indicate no controller
     uint8_t unknown_ext2 : 1; // ExtHasExtraData?
     uint8_t unknown_ext1 : 1; // ExtCapableOfExtraData?
-#else
-#error "not known"
 #endif 
     uint8_t Unk2; // unused?
     uint8_t touch_count;
@@ -120,6 +116,50 @@ struct hori_ps4_extra_data {
 
 HORI_STATIC_ASSERT(sizeof(struct hori_ps4_extra_data) == 24, "");
 HORI_STATIC_ASSERT(HORI_ALIGNOF(struct hori_ps4_extra_data) == 1, "");
+
+union hori_ps4_buttons {
+    struct {
+#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+        unsigned char hat_buttons : 3;
+        unsigned char hat_released : 1;
+        unsigned char square : 1;
+        unsigned char cross : 1;
+        unsigned char circle : 1;
+        unsigned char triangle : 1;
+        unsigned char l1 : 1;
+        unsigned char r1 : 1;
+        unsigned char l2 : 1;
+        unsigned char r2 : 1;
+        unsigned char share : 1;
+        unsigned char options : 1;
+        unsigned char l3 : 1;
+        unsigned char r3 : 1;
+        unsigned char ps : 1;
+        unsigned char tpad : 1;
+        unsigned char counter : 6;
+#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
+        unsigned char r3 : 1;
+        unsigned char l3 : 1;
+        unsigned char options : 1;
+        unsigned char share : 1;
+        unsigned char r2 : 1;
+        unsigned char l2 : 1;
+        unsigned char r1 : 1;
+        unsigned char l1 : 1;
+        unsigned char triangle : 1;
+        unsigned char circle : 1;
+        unsigned char cross : 1;
+        unsigned char square : 1;
+        unsigned char hat_released : 1;
+        unsigned char hat_buttons : 3;
+#endif
+    };
+    unsigned char raw[3];
+};
+
+HORI_STATIC_ASSERT(sizeof(union hori_ps4_buttons) == 3, "");
+HORI_STATIC_ASSERT(HORI_ALIGNOF(union hori_ps4_buttons) == 1, "");
+
 
 /** @brief PS4 buttons structure
  */
@@ -129,57 +169,7 @@ struct hori_ps4_gamepad_report {
     unsigned char left_stick_y;
     unsigned char right_stick_x;
     unsigned char right_stick_y;
-    struct hori_ps4_buttons {
-        struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            unsigned char hat_buttons : 3;
-            unsigned char hat_released : 1;
-            unsigned char square : 1;
-            unsigned char cross : 1;
-            unsigned char circle : 1;
-            unsigned char triangle : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            unsigned char triangle : 1;
-            unsigned char circle : 1;
-            unsigned char cross : 1;
-            unsigned char square : 1;
-            unsigned char hat_released : 1;
-            unsigned char hat_buttons : 3;
-#endif 
-        };
-        struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            unsigned char l1 : 1;
-            unsigned char r1 : 1;
-            unsigned char l2 : 1;
-            unsigned char r2 : 1;
-            unsigned char share : 1;
-            unsigned char options : 1;
-            unsigned char l3 : 1;
-            unsigned char r3 : 1;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            unsigned char r3 : 1;
-            unsigned char l3 : 1;
-            unsigned char options : 1;
-            unsigned char share : 1;
-            unsigned char r2 : 1;
-            unsigned char l2 : 1;
-            unsigned char r1 : 1;
-            unsigned char l1 : 1;
-#endif
-        };
-        struct {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-            unsigned char ps : 1;
-            unsigned char tpad : 1;
-            unsigned char counter : 6;
-#elif __BYTE_ORDER__ == __ORDER_BIG_ENDIAN__
-            unsigned char counter : 6;
-            unsigned char tpad : 1;
-            unsigned char ps : 1;
-#endif
-        };
-    } buttons;
+    union hori_ps4_buttons buttons;
     unsigned char left_trigger; // l2 analog
     unsigned char right_trigger; // r2 analog
     struct hori_ps4_extra_data extra;

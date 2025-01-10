@@ -328,9 +328,10 @@ hori_device_platform_data_t* hori_make_platform_data(const hori_device_config_t*
 }
 
 int hori_platform_data_is_identical(const hori_device_platform_data_t* a, const hori_device_platform_data_t* b) {
-    if (a == NULL || b == NULL) {
+    if (a == NULL || b == NULL)
         return a == b;
-    }
+    if (a == b)
+        return 1;
     return a->location.length == b->location.length &&
         a->location.count == b->location.count &&
         a->location.value != NULL && b->location.value != NULL &&
