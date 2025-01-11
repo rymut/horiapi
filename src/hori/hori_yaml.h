@@ -19,7 +19,7 @@ enum hori_yaml_button_naming {
 struct hori_yaml_config {
     /** @button config stored inside profile
      */
-    int platform;
+    int layout;
     /** @brief Profile number
      */
     int id;

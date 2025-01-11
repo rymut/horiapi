@@ -29,3 +29,18 @@ const char* hori_get_touch_name(int touch, int length);
 
 const char* hori_get_sensor_name(int sensor, int length);
 
+/** @brief Get name from input index
+ */
+const char* hori_get_input_name(const struct hori_input_names* item, int input, int lenght);
+
+/** @brief Find input name
+ */
+const char* hori_find_input_name(struct hori_input_names const* list, int list_size, int input, int length);
+
+int hori_get_button_value(const char* name, int controller);
+int hori_get_axis_value(const char* name, int controller);
+
+int hori_get_input_value(const struct hori_input_names* object, const char* name, int controller);
+
+int hori_find_input_value(struct hori_input_names const* list, int list_size, const char* name, int controller);
+

@@ -1,5 +1,6 @@
 #include "hori_input_names.h"
 
+#include <string.h>
 #include <horiapi/horiapi.h>
 
 static const char hori_config_button_full_names[][HORI_INPUT_NAME_FULL_LENGTH] = {
@@ -179,8 +180,13 @@ const struct hori_input_names sensor_name_strings[] = {
     {HORI_CONTROLLER_ANY, 0, NULL, NULL, NULL},
 };
 
-const char* hori_get_name(const struct hori_input_names* item, int index, int lenght) {
+const char* hori_get_input_name(const struct hori_input_names* item, int input, int lenght) {
+    const int controller = HORI_GET_CONTROLLER(input);
+    const int index = HORI_BUTTON_INDEX(input);
+
     if (item == NULL)
+        return NULL;
+    if (controller & item->controller == item->controller)
         return NULL;
     if (index < 0 || index >= item->count)
         return NULL;
@@ -193,32 +199,82 @@ const char* hori_get_name(const struct hori_input_names* item, int index, int le
     return NULL;
 }
 
-const char* hori_find_name(struct hori_input_names const* array, int array_size, int value, int length) {
-    const int controller = HORI_GET_CONTROLLER(value);
-    const int index = HORI_BUTTON_INDEX(value);
-
-    for (int i = 0; i < array_size; ++i, ++array) {
-        if (array->controller & controller == array->controller) {
-            const char* name = hori_get_name(array, index, length);
-            if (name)
-                return name;
-        }
+const char* hori_find_input_name(struct hori_input_names const* list, int list_size, int input, int length) {
+    if (list == NULL)
+        return NULL;
+    if (input < 0)
+        return NULL;
+    for (int i = 0; i < list_size; ++i, ++list) {
+        const char* name = hori_get_input_name(list, input, length);
+        if (name)
+            return name;
     }
     return NULL;
 }
 
 const char* hori_get_button_name(int button, int lenght) {
-    return hori_find_name(button_name_strings, sizeof(button_name_strings) / sizeof(button_name_strings[0]), button, lenght);
+    return hori_find_input_name(button_name_strings, sizeof(button_name_strings) / sizeof(button_name_strings[0]), button, lenght);
 }
 
 const char* hori_get_axis_name(int axis, int length) {
-    return hori_find_name(axis_name_strings, sizeof(axis_name_strings) / sizeof(axis_name_strings[0]), axis, length);
+    return hori_find_input_name(axis_name_strings, sizeof(axis_name_strings) / sizeof(axis_name_strings[0]), axis, length);
 }
 
 const char* hori_get_touch_name(int touch, int length) {
-    return hori_find_name(touch_name_strings, sizeof(touch_name_strings) / sizeof(touch_name_strings[0]), touch, length);
+    return hori_find_input_name(touch_name_strings, sizeof(touch_name_strings) / sizeof(touch_name_strings[0]), touch, length);
 }
 
 const char* hori_get_sensor_name(int sensor, int length) {
-    return hori_find_name(sensor_name_strings, sizeof(sensor_name_strings) / sizeof(sensor_name_strings[0]), sensor, length);
+    return hori_find_input_name(sensor_name_strings, sizeof(sensor_name_strings) / sizeof(sensor_name_strings[0]), sensor, length);
 }
+
+int hori_get_input_value(const struct hori_input_names* object, const char* name, int controller) {
+    if (object == NULL)
+        return -1;
+    if (name == NULL)
+        return -1;
+    if (controller < 0)
+        return -1;
+    if (controller == 0)
+        controller = object->controller;
+    if (controller & object->controller != object->controller)
+        return -1;
+    for (int i = 0; i < object->count; ++i) {
+        if (object->short_names && stricmp(object->short_names[i], name) == 0) {
+            return object->controller & i;
+        }
+        if (object->long_names && stricmp(object->long_names[i], name) == 0) {
+            return object->controller & i;
+        }
+        if (object->full_names && stricmp(object->full_names[i], name) == 0) {
+            return object->controller & i;
+        }
+    }
+    return -1;
+}
+
+int hori_find_input_value(struct hori_input_names const* list, int list_size, const char* name, int controller) {
+    if (list == NULL)
+        return -1;
+    if (name == NULL)
+        return -1;
+    if (controller < 0)
+        return -1;
+    for (int i = 0; i < list_size; ++i, ++list) {
+        int input = hori_get_input_value(list, name, controller);
+        if (input >= 0) {
+            return input;
+        }
+    }
+    return -1;
+}
+
+int hori_get_button_value(const char* name, int controller) {
+    return hori_find_input_value(button_name_strings, sizeof(button_name_strings) / sizeof(button_name_strings[0]), name, controller);
+}
+
+int hori_get_axis_value(const char* name, int controller) {
+    return hori_find_input_value(axis_name_strings, sizeof(axis_name_strings) / sizeof(axis_name_strings[0]), name, controller);
+}
+
+

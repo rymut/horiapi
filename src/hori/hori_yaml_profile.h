@@ -3,6 +3,7 @@
 #include <yaml.h>
 
 #include <horiapi/hori_profile.h>
+#include "hori_yaml.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -13,7 +14,7 @@ extern "C" {
     @returns
         The function returns -1 when product is not valid
  */
-int hori_yaml_parse_profile(yaml_parser_t* parser, struct hori_yaml_config* profile, int platform);
+int hori_yaml_parse_profile(yaml_parser_t* parser, struct hori_yaml_config* profile);
 
 /** @brief Emit hori config audio
 
