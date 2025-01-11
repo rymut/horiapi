@@ -13,7 +13,7 @@ extern "C" {
     @returns
         The function returns -1 when product is not valid
  */
-int hori_yaml_parse_profile(yaml_parser_t* parser, struct hori_profile* profile, int platform);
+int hori_yaml_parse_profile(yaml_parser_t* parser, struct hori_yaml_config* profile, int platform);
 
 /** @brief Emit hori config audio
 
@@ -23,7 +23,7 @@ int hori_yaml_parse_profile(yaml_parser_t* parser, struct hori_profile* profile,
     @returns
         The function returns -1 on error
   */
-int hori_yaml_emit_profile(yaml_emitter_t* emitter, const struct hori_profile* profile, int platform);
+int hori_yaml_emit_profile(yaml_emitter_t* emitter, const struct hori_yaml_config* profile);
 
 #ifdef __cplusplus
 }

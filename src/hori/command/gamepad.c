@@ -9,6 +9,8 @@
 #include <horiapi/horiapi.h>
 #include <horiapi/hori_time.h>
 
+#include "../hori_input_names.h"
+
 struct axis {
     int name;
     int value;
@@ -21,77 +23,6 @@ struct axis {
     } norm;
 };
 
-const char* hori_ps_axis_full_names[] = {
-    "Not Available",
-    "Left Stick Horizontal",
-    "Left Stick Vertical",
-    "Right Stick Horizontal",
-    "Right Stick Vertical",
-    "Left Trigger",
-    "Right Trigger"
-};
-
-const char* hori_ps_axis_long_names[] = {
-    "N/A",
-    "LSh",
-    "LSv",
-    "RSh",
-    "RSv",
-    "LT",
-    "RT",
-};
-
-const char * hori_ps_axis_short_names[] = {
-        "NA",
-        "X",
-        "Y",
-        "Rz",
-        "Rx",
-        "Ry",
-};
-        
-struct AxisNaming {
-    int controller;
-    int count;
-    const char** short_names;
-    const char** long_names;
-    const char** full_names;
-};
-
-const struct AxisNaming platformAxisNaming[] = {
-    {HORI_CONTROLLER_ANY, 0, NULL, NULL, NULL}, // HID
-    {HORI_CONTROLLER_CONFIG, 0, NULL, NULL, NULL}, // CONFIG
-    {HORI_CONTROLLER_PLAYSTATION4, sizeof(hori_ps_axis_short_names) / sizeof(hori_ps_axis_short_names[0]), hori_ps_axis_short_names, hori_ps_axis_long_names, hori_ps_axis_full_names},
-    {HORI_CONTROLLER_PLAYSTATION5, sizeof(hori_ps_axis_short_names) / sizeof(hori_ps_axis_short_names[0]), hori_ps_axis_short_names, hori_ps_axis_long_names, hori_ps_axis_full_names},
-    {HORI_CONTROLLER_XINPUT, NULL, NULL, NULL}
-};
-
-const struct AxisNaming* get_axis_names(int name) {
-    int controller = HORI_GET_CONTROLLER(name);
-    for (int i = 0; i < sizeof(platformAxisNaming) / sizeof(platformAxisNaming[0]); i++) {
-        if (platformAxisNaming[i].controller & controller) {
-            return platformAxisNaming + i;
-        }
-    }
-    return NULL;
-}
-const char* get_axis_name_from(const struct AxisNaming* naming, int name, int length) {
-    if (naming == NULL)
-        return NULL;
-    int index = HORI_AXIS_INDEX(name);
-    if (index < 0 || index >= naming->count)
-        return NULL;
-    if (length <= 0 && naming->short_names)
-        return naming->short_names[index];
-    if (length == 1 && naming->long_names)
-        return naming->long_names[index];
-    if (length >= 2 && naming->full_names)
-        return naming->full_names[index];
-    return NULL;
-}
-const char* get_axis_name(int name, int length) {
-    return get_axis_name_from(get_axis_names(name), name, length);
-}
 #define TUI_MAX_WIDTH 256
 
 void drawMeter(WINDOW* win, struct axis* a, int row) {
@@ -104,7 +35,7 @@ void drawMeter(WINDOW* win, struct axis* a, int row) {
     int len = border * 2;
     addch('[');
     len++;
-    const char *name = get_axis_name(a->name, 0);
+    const char *name = hori_get_axis_name(a->name, 0);
     if (name != NULL) {
         len += strlen(name);
         addstr(name);

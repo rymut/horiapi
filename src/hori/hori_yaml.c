@@ -17,7 +17,7 @@ int hori_yaml_config_parse_file(struct hori_yaml_config* config, FILE* file) {
 int hori_yaml_config_parse_string(struct hori_yaml_config* config, const uint8_t* data, size_t size) {
     return -1;
 }
-int hori_yaml_config_emit(const struct hori_yaml_config* list, yaml_emitter_t* emitter) {
+int hori_yaml_config_emit(const struct hori_yaml_config_list* list, yaml_emitter_t* emitter) {
     yaml_event_t event;
     if (!yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING))
         return 0;
@@ -29,8 +29,8 @@ int hori_yaml_config_emit(const struct hori_yaml_config* list, yaml_emitter_t* e
         return 0;
     if (!yaml_emitter_emit(emitter, &event))
         return 0;
-    for (const struct hori_yaml_config* item = list; item != NULL; list = list->next) {
-        if (!hori_yaml_emit_profile(emitter, item->profile, item->platform))
+    for (const struct hori_yaml_config_list* item = list; item != NULL; list = list->next) {
+        if (!hori_yaml_emit_profile(emitter, &item->config))
             return 0;
     }
     if (!yaml_sequence_end_event_initialize(&event))

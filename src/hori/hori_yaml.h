@@ -14,19 +14,29 @@ enum hori_yaml_button_naming {
     SWITCH = 4
 };
 
-
-/** @brief Store information about config
+/** @brief Store config information
  */
 struct hori_yaml_config {
-    int platform; // format names
+    /** @button config stored inside profile
+     */
+    int platform;
+    /** @brief Profile number
+     */
+    int id;
+    /** @brief Proflie to store */
     struct hori_profile* profile;
-    struct hori_yaml_config* next;
+};
+/** @brief Store information about config
+ */
+struct hori_yaml_config_list {
+    struct hori_yaml_config config;
+    struct hori_yaml_config_list* next;
 };
 
-int hori_yaml_config_parse_file(struct hori_yaml_config* config, FILE* file);
-int hori_yaml_config_parse_string(struct hori_yaml_config* config, const uint8_t* data, size_t size);
+int hori_yaml_config_parse_file(struct hori_yaml_config_list* config, FILE* file);
+int hori_yaml_config_parse_string(struct hori_yaml_config_list* config, const uint8_t* data, size_t size);
 
 
-int hori_yaml_config_emit_file(const struct hori_yaml_config* config, FILE* file);
-int hori_yaml_config_emit_string(const struct hori_yaml_config* config, uint8_t* data, size_t size, size_t* writeSize);
-int hori_yaml_config_emit(const struct hori_yaml_config* config, yaml_emitter_t* emitter);
+int hori_yaml_config_emit_file(const struct hori_yaml_config_list* config, FILE* file);
+int hori_yaml_config_emit_string(const struct hori_yaml_config_list* config, uint8_t* data, size_t size, size_t* writeSize);
+int hori_yaml_config_emit(const struct hori_yaml_config_list* config, yaml_emitter_t* emitter);
