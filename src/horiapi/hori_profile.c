@@ -48,7 +48,7 @@ int hori_internal_is_valid_profile_config(struct hori_profile_config* config) {
     return 0;
 }
 
-hori_profile_t *hori_make_profile(int product) {
+hori_profile_t* hori_make_profile(int product) {
     struct hori_profile* result = (struct hori_profile*)calloc(1, sizeof(struct hori_profile));
     if (result == NULL) {
         return NULL;
@@ -68,16 +68,25 @@ void hori_free_profile(hori_profile_t* profile) {
     }
     free(profile);
 }
+hori_profile_t* hori_duplicate_profile(const hori_profile_t* profile) {
+    if (profile == NULL)
+        return NULL;
+    if (profile->hori_api_version != HORI_API_VERSION)
+        return NULL;
+    struct hori_profile* result = (struct hori_profile*)calloc(1, sizeof(struct hori_profile));
+    if (result == NULL)
+        return NULL;
+    memcpy(result, profile, sizeof(struct hori_profile));
+    return result;
+}
 
-char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile) {
+char const* HORI_API_CALL hori_get_profile_name(const hori_profile_t* profile) {
     if (profile == NULL) {
         return NULL;
     }
     if (profile->hori_api_version != HORI_API_VERSION) {
         return NULL;
     }
-    memset(profile->name, 0, sizeof(profile->name));
-    memcpy(profile->name, profile->config.name, sizeof(profile->config.name));
     return profile->name;
 }
 
@@ -85,11 +94,11 @@ int HORI_API_CALL hori_set_profile_name(hori_profile_t* profile, char const* nam
     if (profile == NULL) {
         return -1;
     }
-    if (name != NULL && size > HORI_PROFILE_NAME_SIZE) {
+    if (name == NULL || size < 0 || size > HORI_PROFILE_NAME_SIZE)
         return -1;
-    }
+
     memset(profile->config.name, 0, sizeof(profile->config.name));
-    memcpy(profile->config.name, name, size);
-    hori_get_profile_name(profile);
+    memcpy(&profile->config.name, name, size);
+    memset(profile->name, 0, sizeof(profile->name));
     return 0;
 }
