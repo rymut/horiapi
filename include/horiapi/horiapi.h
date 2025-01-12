@@ -55,6 +55,8 @@
 #define HORI_GET_CONTROLLER(axis_or_button) ((axis_or_button>>8)<<8)
 #define HORI_AXIS_INDEX(axis) (axis > 0 ? (axis & 0xFF) : 0)
 
+#define HORI_GET_INDEX(input) (input > 0 ? (intput & 0xFF) : 0)
+
 /** @brief Get button index
 
     @param[in] button The platform dependent button index
@@ -208,7 +210,6 @@ extern "C" {
 
         HORI_XINPUT_BUTTON_LBUMPER      = HORI_CONTROLLER_XINPUT | 24,
         HORI_XINPUT_BUTTON_LTRIGGER     = HORI_CONTROLLER_XINPUT | 25,
-
 
         HORI_XINPUT_BUTTON_HOME         = HORI_XINPUT_BUTTON_GUIDE,
     };
@@ -371,10 +372,13 @@ extern "C" {
 
         HORI_BUTTON_LAGILE = 33,
         HORI_BUTTON_LTARGET = 34,
-
         // COSTOM BUT NOT MAPPED
         HORI_BUTTON_SHARE = 35,
         HORI_BUTTON_OPTIONS = 35,
+        // not papped
+        HORI_BUTTON_RAGILE = 36,
+        HORI_BUTTON_RTARGET = 37,
+
         // DISABLE MAPPING
         HORI_BUTTON_DISABLED = 255
     };
@@ -409,6 +413,27 @@ extern "C" {
         void* data;
     };
     typedef struct hori_device_firmware_config hori_device_firmware_config_t;
+    /** @brief Describe mapping between physical/virtual and virtual buttons */
+    union hori_device_index_input {
+        struct {
+            /** @brief Index of button first are always physical buttons that can be remapped */
+            unsigned char index;
+            /** @brief Button responsible for hori */
+            unsigned char hori;
+        };
+        unsigned short value;
+    };
+
+    /** @brief Describe buttons layouts for different devices */
+    union hori_device_input_controller {
+        struct {
+            unsigned char hori;
+            unsigned char xbox;
+            unsigned char ps;
+            unsigned char ns;
+        };
+        unsigned int value;
+    };
 
     /** @brief Structure used to describe supported devices
 
@@ -768,9 +793,20 @@ extern "C" {
 
         @ingroup API
         @since 0.1.0
-        @param profile The handle returned from @see hori_make_profile
+        @param[in|out] profile The handle returned from @see hori_make_profile
      */
     void hori_free_profile(hori_profile_t* profile);
+
+    /** @brief Duplicate profile
+
+        @ingroup API
+        @since 0.1.0
+        @param[in] profile The profile to duplicate
+
+        @returns
+            This function returns duplicated profile.
+      */
+    hori_profile_t* hori_duplicate_profile(const hori_profile_t* profile);
 
     /** @brief Get profile from device or cache
 
@@ -805,8 +841,14 @@ extern "C" {
     */
     int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t* profile);
 
-    /** @brief Get profile name */
-    char const* HORI_API_CALL hori_get_profile_name(hori_profile_t* profile);
+    /** @brief Get profile name
+
+        @param[in] profile The profile to get name
+
+        @returns
+            The function returns profile name or nullptr
+      */
+    char const* HORI_API_CALL hori_get_profile_name(const hori_profile_t* profile);
 
     int HORI_API_CALL hori_set_profile_name(hori_profile_t* profile, char const* name, int size);
 
@@ -822,14 +864,33 @@ extern "C" {
     int HORI_API_CALL hori_get_profile_audio(hori_profile_t* profile, int prop);
 
     enum hori_profile_button_property {
+        HORI_PROFILE_BUTTON_NAME,
+        HORI_PROFILE_BUTTON_ANY_ENABLED,
         HORI_PROFILE_BUTTON_MAPPING_ENABLED,
         HORI_PROFILE_BUTTON_MAPPING_VALUE,
-        HORI_PROFILE_BUTTON_DEADZONE_VALUE,
-        HORI_PROFILE_BUTTON_
+        HORI_PROFILE_BUTTON_DEAD_RANGE_VALUE,
+        HORI_PROFILE_BUTTON_EDGE_DEAD_RANGE_VALUE,
+        HORI_PROFILE_BUTTON_TURBO_ENABLED,
+        HORI_PROFILE_BUTTON_TURBO_VALUE,
+        HORI_PROFILE_BUTTON_ANALOG_LINEAR_ENABLED,
+        HORI_PROFILE_BUTTON_ANALOG_MOVEMENT_A_VALUE,
+        HORI_PROFILE_BUTTON_ANALOG_RESPONSE_A_VALUE,
+        HORI_PROFILE_BUTTON_ANALOG_MOVEMENT_B_VALUE,
+        HORI_PROFILE_BUTTON_ANALOG_RESPONSE_B_VALUE,
     };
 
     int HORI_API_CALL hori_set_profile_button(hori_profile_t* profile, int button, int prop, int value);
-    int HORI_API_CALL hori_get_profile_button(hori_profile_t* profile, int button, int prop);
+
+    /** @brief set button mapping
+
+        @param[in] profile The profile to get button
+        @param[in] button The button index
+        @param[in] button The property of the button @see hori_profile_button_property
+
+        @returns
+            THis function returns -1 on error otherwise value of the property
+      */
+    int HORI_API_CALL hori_get_profile_button(const hori_profile_t* profile, int button, int prop);
 
     enum hori_profile_stick_mapping {
         HORI_PROFILE_STICK_FUNCTION_DEFAULT = 0,

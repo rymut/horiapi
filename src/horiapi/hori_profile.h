@@ -30,8 +30,8 @@ struct hori_value_config {
 HORI_STATIC_ASSERT(sizeof(struct hori_value_config) == 2, "");
 
 struct hori_analog_config {
-    unsigned char orginal;
-    unsigned char target;
+    unsigned char movement;
+    unsigned char response;
 };
 
 /** @brief Describe stick configuration
@@ -104,27 +104,27 @@ struct hori_stick_config {
             0 . 2 . 4 . 6 . 8 . 1 . 1 . 1 . 1 . 2 . 2
                 0   0   0   0   2   4   6   8   2   4
                                 0   0   0   0   0   0
-        240            +3      +2            +132  10    
-        .                               
-        220 
-        .   
-        180 
-        .   
-        160 
-        .   
-        140 
-        .   
-        120 
-        .   
-        80  
-        .   
-        60             
-        .   
-        40          
-        .   
-        20      
+        240            +3      +2            +132  10
         .
-        0   
+        220
+        .
+        180
+        .
+        160
+        .
+        140
+        .
+        120
+        .
+        80
+        .
+        60
+        .
+        40
+        .
+        20
+        .
+        0
             0 . 2 . 4 . 6 . 8 . 1 . 1 . 1 . 1 . 2 . 2
                 0   0   0   0   2   4   6   8   2   4
                                 0   0   0   0   0   0
@@ -159,7 +159,7 @@ HORI_STATIC_ASSERT(sizeof(struct hori_stick_config) == 16, "");
 
 enum hori_stick_option {
     HORI_STICK_OPTION_ALL, // - bool
-    HORI_STICK_OPTION_KEY_DEAD_ZONE, // deadzone settings
+    HORI_STICK_OPTION_DEAD_ZONE, // deadzone settings
     HORI_STICK_OPTION_REVERSE_AXIS, // flag true false - bool
     HORI_STICK_OPTION_REVERSE_AXIS_HORIZONTAL, // depends on reverse_axis - bool
     HORI_STICK_OPTION_REVERSE_AXIS_VERTICAL,   // bool
@@ -180,15 +180,6 @@ struct hori_feedback_config {
     unsigned char SideRightVibration; // 5
 };
 HORI_STATIC_ASSERT(sizeof(struct hori_feedback_config) == HORI_FEEDBACK_CONFIG_SIZE, "");
-
-enum hori_button_option {
-    HORI_BUTTON_OPTION_ALL,
-    HORI_BUTTON_OPTION_TURBO, // also quick turbo
-    HORI_BUTTON_OPTION_DEAD_RANGE,
-    HORI_BUTTON_OPTION_EDGE_DEAD_RANGE,
-    HORI_BUTTON_OPTION_MAPPED,
-    HORI_BUTTON_OPTION_LINEAR_VALUE,
-};
 
 struct hori_button_config {
     unsigned char enabled;			// 1
@@ -214,39 +205,16 @@ struct hori_button_config {
         unsigned char flags;
     };// 2
 
-    unsigned char turbo_enabled;			// 3 bool 0 , 1 
+    unsigned char turbo_enabled;			// 3 bool 0 , 1 - if supported 
     unsigned char turbo_speed;	// 4 - 1 turbo (disabled normal) if > 1 then turbo is used when @turbo enabled is set value is set in HZ
     unsigned char quick_turbo_enabled;	//5 always the same as 0, the same as turbo enabled (can be changed)
     unsigned char dead_range;	//6 
     unsigned char edge_dead_range;//7 - alwayes dead_range + 1 (for dpad)
     struct hori_value_config map_button; // 8-9 - equal button by default (indexof button)
-    unsigned char linear_value;	//10 - probably value of mapped analog button ??
+    unsigned char linear_analog_enabled;	//10 - probably value of mapped analog button ??
     struct hori_analog_config map_analog[2];			//14 - same thing as in analog value 
 };
-HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE , "");
-
-/** @brief Get value of key
-
-    @since 0.1.0
-    @param button The button config pointer
-
-    @returns
-        This function return -1 on error, or value on success (always in range 0-255)
-  */
-int hori_internal_get_button_config_value(struct hori_button_config const* button, int key);
-/** @brief Initialize button config
-
-    @param button[in|out] button The object with field to reset
-
-    @returns
-        This function returns -1 when button is nullptr
-  */
-int hori_internal_init_button_config(struct hori_button_config* button);
-
-int hori_internal_set_button_config_value(struct hori_button_config* button, int key, char value);
-int hori_internal_get_button_config_enabled(struct hori_button_config const* button, int key);
-int hori_internal_set_button_config_enabled(struct hori_button_config* stick, int key, int value);
-
+HORI_STATIC_ASSERT(sizeof(struct hori_button_config) == HORI_BUTTON_CONFIG_SIZE, "");
 
 /** @brief Hori audio configuration */
 struct hori_audio_config {
