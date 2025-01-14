@@ -19,11 +19,6 @@ int main_set() {
     return EXIT_SUCCESS;
 }
 
-int main_get() {
-    return EXIT_SUCCESS;
-}
-
-
 #define ARG_CMD(cmd) arg_rex1(NULL, NULL, cmd, NULL, REG_ICASE, NULL);
 #define ARG_CONFIG() arg_lit0("c", "config", "enter config mode")
 #define ARG_HELP() arg_lit0("h", "help", "show help message")
@@ -127,6 +122,9 @@ int main(int argc, char** argv)
     gamepad_device->ival[0] = 0;
     gamepad_wait->ival[0] = -1;
 
+    get_device->ival[0] = 0;
+    get_profile->ival[0] = -1;
+
     main_errors = arg_parse(argc, argv, main_argtable);
     list_errors = arg_parse(argc, argv, list_argtable);
     get_errors = arg_parse(argc, argv, get_argtable);
@@ -158,7 +156,7 @@ int main(int argc, char** argv)
             printf("show get help\n");
         }
         else {
-            exitcode = main_get();
+            exitcode = hori_cli_command_get(*get_device->ival, *get_profile->ival, get_output->count ? get_output->filename[0] : NULL);
         }
     }
     else if (test_errors == 0) {

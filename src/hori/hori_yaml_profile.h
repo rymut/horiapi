@@ -2,7 +2,7 @@
 
 #include <yaml.h>
 
-#include <horiapi/hori_profile.h>
+#include <horiapi/horiapi.h>
 #include "hori_yaml.h"
 
 #ifdef __cplusplus

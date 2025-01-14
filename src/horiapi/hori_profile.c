@@ -114,6 +114,14 @@ hori_profile_t* hori_duplicate_profile(const hori_profile_t* profile) {
     return result;
 }
 
+int HORI_API_CALL hori_get_profile_product(const hori_profile_t* profile) {
+    if (profile == NULL)
+        return -1;
+    if (profile->hori_api_version != HORI_API_VERSION)
+        return -1;
+    return profile->product;
+}
+
 char const* HORI_API_CALL hori_get_profile_name(const hori_profile_t* profile) {
     if (profile == NULL) {
         return NULL;

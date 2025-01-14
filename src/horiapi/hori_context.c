@@ -2,6 +2,60 @@
 
 #include <hidapi/hidapi.h>
 
+// 0xFF - virtual or not connected
+union hori_device_index_input common[] = {
+    { 0, HORI_BUTTON_UP },
+    { 1, HORI_BUTTON_DOWN },
+    { 2, HORI_BUTTON_LEFT },
+    { 3, HORI_BUTTON_RIGHT },
+
+    { 4, HORI_BUTTON_L1, },
+    { 5, HORI_BUTTON_R1, },
+    { 6, HORI_BUTTON_L3, },
+    { 7, HORI_BUTTON_R3, },
+
+    { 8, HORI_BUTTON_FL1, },
+    { 9, HORI_BUTTON_FL2 },
+    { 10, HORI_BUTTON_FR1 },
+    { 11, HORI_BUTTON_FR2 },
+
+    { 12, HORI_BUTTON_L2 },
+    { 13, HORI_BUTTON_R2 },
+
+    { 14, HORI_BUTTON_CROSS },
+    { 15, HORI_BUTTON_CIRCLE },
+    { 16, HORI_BUTTON_SQUARE },
+    { 17, HORI_BUTTON_TRIANGLE },
+
+    { 18, HORI_BUTTON_LPEDAL },
+    { 19, HORI_BUTTON_RPEDAL },
+
+    { 20, HORI_BUTTON_PLAYSTATION },
+    { 21, HORI_BUTTON_SELECT },
+    { 22, HORI_BUTTON_START },
+    { 23, HORI_BUTTON_CAMERA },
+
+    { 0xFF, HORI_BUTTON_LSTICK_UP, },
+    { 0xFF, HORI_BUTTON_LSTICK_DOWN},
+    { 0xFF, HORI_BUTTON_LSTICK_LEFT},
+    { 0xFF, HORI_BUTTON_LSTICK_RIGHT,},
+
+    { 0xFF, HORI_BUTTON_RSTICK_UP},
+    { 0xFF, HORI_BUTTON_RSTICK_DOWN},
+    { 0xFF, HORI_BUTTON_RSTICK_LEFT},
+    { 0xFF, HORI_BUTTON_RSTICK_RIGHT},
+
+    { 0xFF, HORI_BUTTON_LAGILE},
+    { 0xFF, HORI_BUTTON_LTARGET},
+
+    // COSTOM BUT NOT MAPPED
+    { 0xFF, HORI_BUTTON_SHARE},
+    { 0xFF, HORI_BUTTON_OPTIONS },
+    // DISABLE MAPPING
+    { 0xFF, HORI_BUTTON_DISABLED }
+};
+
+
 static hori_device_config_t hori_known_devices[] = {
     {
         // pc mode

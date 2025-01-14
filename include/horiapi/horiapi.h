@@ -841,6 +841,8 @@ extern "C" {
     */
     int hori_set_profile(hori_device_t* device, int profile_id, hori_profile_t* profile);
 
+    int HORI_API_CALL hori_get_profile_product(const hori_profile_t* profile);
+
     /** @brief Get profile name
 
         @param[in] profile The profile to get name

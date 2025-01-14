@@ -7,6 +7,8 @@ target_sources(
   ${PROJECT_NAME}
   PRIVATE "command/gamepad.c"
           "command/gamepad.h"
+          "command/get.c"
+          "command/get.h"
           "command/list.c"
           "command/list.h"
           "command/test.c"
