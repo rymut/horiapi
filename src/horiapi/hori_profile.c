@@ -223,7 +223,7 @@ int HORI_API_CALL hori_get_profile_button(const hori_profile_t* profile, int but
         return -1;
     if (button < 0 || button >= HORI_PROFILE_BUTTONS_COUNT)
         return -1;
-    if (prop < HORI_PROFILE_BUTTON_NAME || prop > HORI_PROFILE_BUTTON_TURBO_VALUE)
+    if (prop < HORI_PROFILE_BUTTON_NAME || prop > HORI_PROFILE_BUTTON_ANALOG_RESPONSE_B_VALUE)
         return -1;
     struct hori_button_config* button_config = profile->config.buttons + button;
     switch (prop) {

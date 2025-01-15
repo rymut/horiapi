@@ -13,6 +13,7 @@ const char config_profile_button_turbo[] = "turbo";
 const char config_profile_button_mapping[] = "map";
 const char config_profile_button_inner_dead_zone[] = "inner_dead_zone";
 const char config_profile_button_outer_dead_zone[] = "outer_dead_zone";
+const char config_profile_button_curve[] = "curve";
 const char config_profile_button_curve_movement[] = "movement";
 const char config_profile_button_curve_response[] = "response";
 
@@ -199,36 +200,43 @@ int hori_yaml_emit_profile_button(yaml_emitter_t* emitter, const hori_profile_t*
             config_profile_button_outer_dead_zone, strlen(config_profile_button_outer_dead_zone), scalar, sizeof(scalar), "%d", outer_dead_zone))
             return 0;
         // angle and linear
-        if (hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_LINEAR_ENABLED) == 1) {
-            const int m_a = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_MOVEMENT_A_VALUE);
-            const int m_b = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_MOVEMENT_B_VALUE);
-            const int r_a = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_RESPONSE_A_VALUE);
-            const int r_b = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_RESPONSE_B_VALUE);
-            if (m_a == -1 || m_b == -1 || r_a == -1 || r_b == -1)
-                return 0;
-
-            if (!yaml_sequence_end_event_initialize(&event, NULL, (yaml_char_t*)YAML_MAP_TAG, 1, YAML_BLOCK_SEQUENCE_START_TOKEN))
+        if (hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_LINEAR_ENABLED) !=-1) {
+            if (!yaml_scalar_event_initialize(&event, NULL, (yaml_char_t*)YAML_STR_TAG,
+                config_profile_button_curve, strlen(config_profile_button_curve), 1, 0, YAML_PLAIN_SCALAR_STYLE))
                 return 0;
             if (!yaml_emitter_emit(emitter, &event))
                 return 0;
-
-            // create point
-
-            if (!yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t*)YAML_MAP_TAG, 1, YAML_BLOCK_MAPPING_STYLE))
+            if (!yaml_sequence_start_event_initialize(&event, NULL, YAML_SEQ_TAG, 1, YAML_BLOCK_SEQUENCE_STYLE))
                 return 0;
             if (!yaml_emitter_emit(emitter, &event))
                 return 0;
-            if (!hori_yaml_emit_map_scalar(emitter, NULL, YAML_STR_TAG, 1, 0, YAML_PLAIN_SCALAR_STYLE,
-                config_profile_button_curve_movement, strlen(config_profile_button_curve_movement), scalar, sizeof(scalar), "%d", mapping_name))
-                return 0;
-            if (!hori_yaml_emit_map_scalar(emitter, NULL, YAML_STR_TAG, 1, 0, YAML_PLAIN_SCALAR_STYLE,
-                config_profile_button_curve_response, strlen(config_profile_button_curve_response), scalar, sizeof(scalar), "%d", mapping_name))
-                return 0;
-            if (!yaml_mapping_end_event_initialize(&event))
-                return 0;
-            if (!yaml_emitter_emit(emitter, &event))
-                return 0;
+            struct {
+                int movement;
+                int response;
+            } curve[2];
+            curve[0].movement = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_MOVEMENT_A_VALUE);
+            curve[1].movement = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_MOVEMENT_B_VALUE);
+            curve[0].response = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_RESPONSE_A_VALUE);
+            curve[1].response = hori_get_profile_button(profile, button, HORI_PROFILE_BUTTON_ANALOG_RESPONSE_B_VALUE);
 
+            for (int p = 0; p < 2; ++p) {
+                if (curve[p].movement == -1 || curve[p].response == -1)
+                    return 0;
+                if (!yaml_mapping_start_event_initialize(&event, NULL, (yaml_char_t*)YAML_MAP_TAG, 1, YAML_BLOCK_MAPPING_STYLE))
+                    return 0;
+                if (!yaml_emitter_emit(emitter, &event))
+                    return 0;
+                if (!hori_yaml_emit_map_scalar(emitter, NULL, YAML_STR_TAG, 1, 0, YAML_PLAIN_SCALAR_STYLE,
+                    config_profile_button_curve_movement, strlen(config_profile_button_curve_movement), scalar, sizeof(scalar), "%d", curve[p].movement))
+                    return 0;
+                if (!hori_yaml_emit_map_scalar(emitter, NULL, YAML_STR_TAG, 1, 0, YAML_PLAIN_SCALAR_STYLE,
+                    config_profile_button_curve_response, strlen(config_profile_button_curve_response), scalar, sizeof(scalar), "%d", curve[p].response))
+                    return 0;
+                if (!yaml_mapping_end_event_initialize(&event))
+                    return 0;
+                if (!yaml_emitter_emit(emitter, &event))
+                    return 0;
+            }
             if (!yaml_sequence_end_event_initialize(&event))
                 return 0;
             if (!yaml_emitter_emit(emitter, &event))
