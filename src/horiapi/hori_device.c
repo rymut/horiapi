@@ -159,7 +159,7 @@ hori_profile_t* HORI_API_CALL hori_get_profile(hori_device_t* device, int profil
         return device_profile->profile;
     }
 
-    hori_profile_t* profile = hori_make_profile(device->config->product);
+    hori_profile_t* profile = hori_make_profile(device->config->product, device->context);
     if (profile == NULL) {
         return NULL;
     }
@@ -195,7 +195,7 @@ int HORI_API_CALL hori_set_profile(hori_device_t* device, int profile_id, hori_p
         if (profile == NULL) {
             return 0;
         }
-        hori_profile_t* dev_profile = hori_make_profile(device->config->product);
+        hori_profile_t* dev_profile = hori_make_profile(device->config->product, device->context);
         if (dev_profile == NULL) {
             return -1;
         }

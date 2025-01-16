@@ -81,7 +81,7 @@ int hori_internal_is_valid_profile_config(struct hori_profile_config* config) {
     return 0;
 }
 
-hori_profile_t* hori_make_profile(int product) {
+hori_profile_t* hori_make_profile(int product, hori_context_t *context) {
     struct hori_profile* result = (struct hori_profile*)calloc(1, sizeof(struct hori_profile));
     if (result == NULL) {
         return NULL;
@@ -225,7 +225,7 @@ int HORI_API_CALL hori_get_profile_button(const hori_profile_t* profile, int but
         return -1;
     if (prop < HORI_PROFILE_BUTTON_NAME || prop > HORI_PROFILE_BUTTON_ANALOG_RESPONSE_B_VALUE)
         return -1;
-    struct hori_button_config* button_config = profile->config.buttons + button;
+    const struct hori_button_config* button_config = profile->config.buttons + button;
     switch (prop) {
     case HORI_PROFILE_BUTTON_NAME:
         return button + 1;

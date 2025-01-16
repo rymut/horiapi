@@ -782,12 +782,13 @@ extern "C" {
 
         @ingroup API
         @since 0.1.0
-        @param product The product code
+        @param[in] product The product code
+        @param[in] context The context (can be NULL)
 
         @returns
             NULL on error or handle
       */
-    hori_profile_t* hori_make_profile(int product);
+    hori_profile_t* hori_make_profile(int product, hori_context_t *context);
 
     /** @brief Free profile handle
 
