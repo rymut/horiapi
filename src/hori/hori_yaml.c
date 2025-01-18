@@ -40,6 +40,35 @@ int hori_yaml_config_parse_file(struct hori_yaml_config_list* config, FILE* file
 int hori_yaml_config_parse_string(struct hori_yaml_config_list* config, const uint8_t* data, size_t size) {
     return -1;
 }
+
+int hori_yaml_config_list_parse(struct hori_yaml_config_list* list, yaml_parser_t* parser, const hori_context_t* context) {
+    yaml_document_t document;
+    if (list == NULL || parser == NULL)
+        return 0;
+    if (!yaml_parser_load(parser, &document))
+        return 0;
+    yaml_node_t* node = yaml_document_get_root_node(&document);
+    if (node->type != YAML_SEQUENCE_NODE)
+        goto err;
+    struct hori_yaml_config_list* front = &list;
+    struct hori_yaml_config_list** next = &front;
+    for (yaml_node_item_t* index = node->data.sequence.items.start; index < node->data.sequence.items.top; ++index) {
+        if (*next)
+            *next = (struct hori_yaml_config_list*)calloc(1, sizeof(struct hori_yaml_config_list));
+        if (*next != NULL) {
+            if (!hori_yaml_parse_config(&(*next)->config, &document, index, context))
+                return 0;
+            next = &((*next)->next);
+        }
+    }
+
+    yaml_document_delete(&document);
+    return 0;
+err:
+    yaml_document_delete(&document);
+    return 1;
+}
+
 int hori_yaml_config_emit(const struct hori_yaml_config_list* list, yaml_emitter_t* emitter) {
     yaml_event_t event;
     if (!yaml_stream_start_event_initialize(&event, YAML_UTF8_ENCODING))

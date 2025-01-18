@@ -2,12 +2,18 @@
 
 #include <yaml.h>
 
-/** @brief Parse hori product
+#include <horiapi/horiapi.h>
+
+/** @brief Parse product node
+
+    @param[in] document The yaml document
+    @param[in] node_index The yaml document node index
+    @param[in] context The hori context (when NULL uses default context)
 
     @returns
-        The function returns -1 when product is not valid
+        This function returns -1 on error, otherwise function returns product id @see hori_product
  */
-int hori_yaml_parse_product(yaml_parser_t* parser, int *profile);
+int hori_yaml_parse_product(yaml_document_t* document, int node_index, const hori_context_t* context);
 
 /** @brief Emit hori config audio
 

@@ -1,4 +1,4 @@
-#include "hori_yaml_boolean.h"
+#include "hori_yaml_utils.h"
 
 #include <stdlib.h>
 
@@ -26,3 +26,14 @@ int hori_yaml_boolean(const char* string, int string_length)
     return -1;
 }
 
+int hori_yaml_compare_string(const char* a, const char* b) {
+    return a != NULL && b != NULL && strcmp(a, b);
+}
+
+int hori_yaml_compare(const char* a, size_t a_size, yaml_char_t* b, size_t b_size) {
+    if (a_size != b_size || a_size < 0 || b_size < 0)
+        return 0;
+    if (a == NULL || b == NULL || a_size == 0)
+        return a == b;
+    return strncmp(a, b, a_size);
+}
