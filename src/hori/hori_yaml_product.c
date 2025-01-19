@@ -1,14 +1,5 @@
 #include "hori_yaml_product.h"
 
-/** @brief Parse product node
-
-    @param[in] document The yaml document
-    @param[in] node_index The yaml document node index
-    @param[in] context The hori context (when NULL uses default context)
-
-    @returns
-        This function returns -1 on error, otherwise function returns product id @see hori_product
- */
 int hori_yaml_parse_product(yaml_document_t* document, int node_index, const hori_context_t* context) {
     if (document == NULL)
         return -1;
@@ -33,7 +24,7 @@ int hori_yaml_parse_product(yaml_document_t* document, int node_index, const hor
                 return device->product;
             }
         }
-        else {
+        if (is_int) {
             int value = atoi(product_node->data.scalar.value);
             return value < 0 ? -1 : value;
         }
