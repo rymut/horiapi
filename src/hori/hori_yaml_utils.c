@@ -37,3 +37,9 @@ int hori_yaml_compare(const char* a, size_t a_size, yaml_char_t* b, size_t b_siz
         return a == b;
     return strncmp(a, b, a_size);
 }
+
+int hori_yaml_int(const char* string, int string_length) {
+    if (!string || string_length <= 0)
+        return 0;
+    return atoi(string);
+}
