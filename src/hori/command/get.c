@@ -64,7 +64,19 @@ int hori_cli_command_get(int device_id, int profile_id, const char* output) {
     hori_close(device);
     device = NULL;
 
-    hori_yaml_config_emit_file(list, stdout);
+    size_t yaml_size = 0, string_size = 1024*1024*1;
+    char* yaml_string = (char*)calloc(string_size, sizeof(char));
+    if (yaml_string == NULL)
+        return EXIT_FAILURE;
+    hori_yaml_config_emit_string(list, yaml_string, string_size, &yaml_size);
+//    hori_yaml_config_emit_file(list, stdout);
+    
     hori_yaml_free_config_list(list);
+    list = NULL;
+    hori_yaml_config_parse_string(&list, yaml_string, yaml_size, NULL);
+    free(yaml_string);
+    yaml_string = NULL;
+    hori_yaml_free_config_list(list);
+    list = NULL;
     return EXIT_SUCCESS;
 }

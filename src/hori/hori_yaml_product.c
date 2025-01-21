@@ -1,5 +1,6 @@
 #include "hori_yaml_product.h"
 
+// @todo bug in emit - product is emited as STR and not INT
 int hori_yaml_parse_product(yaml_document_t* document, int node_index, const hori_context_t* context) {
     if (document == NULL)
         return -1;

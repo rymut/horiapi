@@ -39,9 +39,9 @@ struct hori_yaml_config_list* hori_yaml_make_config_list(const hori_device_confi
 
 void hori_yaml_free_config_list(struct hori_yaml_config_list* list);
 
-int hori_yaml_config_parse_file(struct hori_yaml_config_list* config, FILE* file);
-int hori_yaml_config_parse_string(struct hori_yaml_config_list* config, const uint8_t* data, size_t size);
-int hori_yaml_config_parse(struct hori_yaml_config_list* config, yaml_parser_t* parser, const hori_context_t *context);
+int hori_yaml_config_parse_file(struct hori_yaml_config_list** config, FILE* file, const hori_context_t *context);
+int hori_yaml_config_parse_string(struct hori_yaml_config_list** config, const uint8_t* data, size_t size, const hori_context_t *context);
+int hori_yaml_config_list_parse(struct hori_yaml_config_list** config, yaml_parser_t* parser, const hori_context_t *context);
 
 int hori_yaml_config_emit_file(const struct hori_yaml_config_list* config, FILE* file);
 int hori_yaml_config_emit_string(const struct hori_yaml_config_list* config, uint8_t* data, size_t size, size_t* writeSize);
