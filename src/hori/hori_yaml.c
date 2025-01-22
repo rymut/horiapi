@@ -50,6 +50,7 @@ int hori_yaml_config_parse_string(struct hori_yaml_config_list** config, const u
     return status;
 }
 
+// todo free list or automatic value
 int hori_yaml_config_list_parse(struct hori_yaml_config_list** list, yaml_parser_t* parser, const hori_context_t* context) {
     yaml_document_t document;
     if (list == NULL || parser == NULL)
@@ -71,12 +72,12 @@ int hori_yaml_config_list_parse(struct hori_yaml_config_list** list, yaml_parser
     }
 
     yaml_document_delete(&document);
-    return 0;
+    return 1;
 err:
     if (!list)
         hori_yaml_free_config_list(*list);
     yaml_document_delete(&document);
-    return 1;
+    return 0;
 }
 
 int hori_yaml_config_emit(const struct hori_yaml_config_list* list, yaml_emitter_t* emitter) {

@@ -63,6 +63,11 @@ int hori_yaml_is_map_node(const yaml_node_t* node) {
     return 1;
 }
 
+/** @brief Parse profile name and update profile
+
+    @returns
+        This function returns 0 on failure
+ */
 int hori_yaml_parse_profile_name(yaml_document_t* document, int index, hori_profile_t* profile) {
     if (!document || !profile || index < 0)
         return 0;
@@ -164,8 +169,8 @@ int hori_yaml_parse_profile_button_curve(yaml_document_t* document, int index, h
         if (!hori_yaml_is_node(node, YAML_SEQUENCE_NODE, YAML_SEQ_TAG))
             return -1;
         size_t curve_index = 0;
-        if (node->data.sequence.items.end - node->data.sequence.items.start > 2)
-            ; // return -1;
+        if ((node->data.sequence.items.top - node->data.sequence.items.start)/sizeof(yaml_node_item_t) > 2)
+            return -1;
         for (yaml_node_item_t* sequence_index = node->data.sequence.items.start; sequence_index < node->data.sequence.items.top; ++sequence_index, ++curve_index) {
             yaml_node_t* sequence_element = yaml_document_get_node(document, *sequence_index);
             if (!hori_yaml_is_node(sequence_element, YAML_MAPPING_NODE, YAML_MAP_TAG))
@@ -243,25 +248,40 @@ int hori_yaml_parse_profile_button(yaml_document_t* document, int index, hori_pr
     return 0;
 }
 
+/** @brief Prase button profile
+
+    @returns
+        This function returns 0 on failure
+ */
 int hori_yaml_parse_profile_buttons(yaml_document_t* document, int index, hori_profile_t* profile, int controller) {
     if (!document || !profile || index < 0)
-        return -1;
+        return 0;
     yaml_node_t* node = yaml_document_get_node(document, index);
     if (!node || node->type != YAML_MAPPING_NODE)
-        return -1;
+        return 0;
     for (const yaml_node_pair_t* pair = node->data.mapping.pairs.start; pair < node->data.mapping.pairs.top; ++pair) {
         const yaml_node_t* key = yaml_document_get_node(document, pair->key);
         if (!hori_yaml_is_string_node(key))
-            return -1;
+            return 0;
         int button_value = hori_get_button_value(key->data.scalar.value, controller);
         if (button_value == -1)
-            return -1;
+            return 0;
         if (hori_yaml_parse_profile_button(document, pair->value, profile, controller, button_value) == -1)
-            return -1;
+            return 0;
     }
-    return 0;
+    return 1;
 }
 
+/** @brief Parse configuration
+
+    @param[in,out] the place where to store configuration
+    @param[in] document
+    @param[in] node_index
+    @param[in] context
+
+    @returns
+        The function returns 0 on error
+  */
 int hori_yaml_parse_config(struct hori_yaml_config* config, yaml_document_t* document, int node_index, hori_context_t* context) {
     if (config == NULL || document == NULL || node_index < 0)
         return 0;
@@ -295,13 +315,13 @@ int hori_yaml_parse_config(struct hori_yaml_config* config, yaml_document_t* doc
     }
     // validate
     if (data.device < 0)
-        return -1;
+        return 0;
     const int product = hori_yaml_parse_product(document, data.device, context);
     if (product == -1)
-        return -1;
+        return 0;
     hori_profile_t* profile = hori_make_profile(product, context);
     if (!profile)
-        return -1;
+        return 0;
     const int id = hori_yaml_parse_profile_id(document, data.device);
     const int layout = hori_yaml_parse_profile_layout(document, data.layout);
     if (!hori_yaml_parse_profile_name(document, data.name, profile))
@@ -313,12 +333,12 @@ int hori_yaml_parse_config(struct hori_yaml_config* config, yaml_document_t* doc
     config->profile_id = id;
     config->product = product;
     config->profile = profile;
-    return 0;
+    return 1;
 
 error_handling:
     hori_free_profile(profile);
     profile = NULL;
-    return 1;
+    return 0;
 }
 
 int hori_yaml_parse_profile(yaml_parser_t* parser, struct hori_yaml_config* profile) {
