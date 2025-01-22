@@ -26,23 +26,28 @@ int hori_yaml_parse_profile_id(yaml_document_t* document, int node_index) {
     if (!document || node_index < 0)
         return -1;
     yaml_node_t* node = yaml_document_get_node(document, node_index);
-    if (node == NULL || node->type != YAML_SCALAR_NODE || !hori_yaml_compare_string(node->tag, YAML_INT_TAG))
+    if (node == NULL || node->type != YAML_SCALAR_NODE)
         return -1;
-    return hori_yaml_int(node->data.scalar.value, node->data.scalar.length);
+    int value = 0;
+    if (hori_yaml_int(&value, node->data.scalar.value, node->data.scalar.length))
+        return value;
+    return -1;
 }
 
 int hori_yaml_parse_profile_layout(yaml_document_t* document, int index) {
     if (!document || index < 0)
         return -1;
     yaml_node_t* node = yaml_document_get_node(document, index);
-    if (node == NULL || node->type != YAML_SCALAR_NODE || !hori_yaml_compare_string(node->tag, YAML_INT_TAG))
+    if (node == NULL || node->type != YAML_SCALAR_NODE)
         return -1;
-    return hori_yaml_int(node->data.scalar.value, node->data.scalar.length);
+    int value = 0;
+    if (hori_yaml_int(&value, node->data.scalar.value, node->data.scalar.length))
+        return value;
+    return -1;
 }
 
-
 int hori_yaml_is_string_node(const yaml_node_t* node) {
-    if (!node || node->type != YAML_SCALAR_NODE || !hori_yaml_compare_string(node->tag, YAML_INT_TAG))
+    if (!node || node->type != YAML_SCALAR_NODE || !hori_yaml_compare_string(node->tag, YAML_STR_TAG))
         return 0;
     return 1;
 }
@@ -60,11 +65,11 @@ int hori_yaml_is_map_node(const yaml_node_t* node) {
 
 int hori_yaml_parse_profile_name(yaml_document_t* document, int index, hori_profile_t* profile) {
     if (!document || !profile || index < 0)
-        return -1;
+        return 0;
     yaml_node_t* node = yaml_document_get_node(document, index);
     if (!node || node->type != YAML_SCALAR_NODE || !hori_yaml_compare_string(node->tag, YAML_STR_TAG))
-        return -1;
-    return hori_set_profile_name(profile, node->data.scalar.value, node->data.scalar.length);
+        return 0;
+    return hori_set_profile_name(profile, node->data.scalar.value, node->data.scalar.length) == 0;
 }
 
 /** @brief Parse turbo button
@@ -77,11 +82,8 @@ int hori_yaml_parse_profile_button_turbo(yaml_document_t* document, int index, h
         return -1;
     int value = 0;
     const yaml_node_t* node = yaml_document_get_node(document, index);
-    if (node) {
-        if (!hori_yaml_is_node(node, YAML_SCALAR_NODE, YAML_INT_TAG))
-            return -1;
-        value = hori_yaml_int(node->data.scalar.value, node->data.scalar.length);
-    }
+    if (node && !hori_yaml_int(&value, node->data.scalar.value, node->data.scalar.length))
+        return -1;
     if (-1 == hori_set_profile_button(profile, button, HORI_PROFILE_BUTTON_TURBO_ENABLED, value != 0))
         return -1;
     if (-1 == hori_set_profile_button(profile, button, HORI_PROFILE_BUTTON_TURBO_VALUE, value))
@@ -124,13 +126,8 @@ int hori_yaml_parse_profile_button_outer_deadzone(yaml_document_t* document, int
         return -1;
     int value = button;
     const yaml_node_t* node = yaml_document_get_node(document, index);
-    if (node) {
-        if (!hori_yaml_is_node(node, YAML_SCALAR_NODE, YAML_INT_TAG))
-            return -1;
-        value = hori_yaml_int(node->data.scalar.value, node->data.scalar.length);
-        if (value < 0)
-            return -1;
-    }
+    if (node && !hori_yaml_int(&value, node->data.scalar.value, node->data.scalar.length))
+        return -1;
     if (-1 == hori_set_profile_button(profile, button, HORI_PROFILE_BUTTON_EDGE_DEAD_RANGE_VALUE, value))
         return -1;
     return 0;
@@ -140,13 +137,8 @@ int hori_yaml_parse_profile_button_inner_deadzone(yaml_document_t* document, int
         return -1;
     int value = button;
     const yaml_node_t* node = yaml_document_get_node(document, index);
-    if (node) {
-        if (!hori_yaml_is_node(node, YAML_SCALAR_NODE, YAML_INT_TAG))
-            return -1;
-        value = hori_yaml_int(node->data.scalar.value, node->data.scalar.length);
-        if (value < 0)
-            return -1;
-    }
+    if (node && !hori_yaml_int(&value, node->data.scalar.value, node->data.scalar.length))
+        return -1;
     if (-1 == hori_set_profile_button(profile, button, HORI_PROFILE_BUTTON_DEAD_RANGE_VALUE, value))
         return -1;
     return 0;
@@ -173,21 +165,22 @@ int hori_yaml_parse_profile_button_curve(yaml_document_t* document, int index, h
             return -1;
         size_t curve_index = 0;
         if (node->data.sequence.items.end - node->data.sequence.items.start > 2)
-            return -1;
-        for (yaml_node_item_t* sequence_index = node->data.sequence.items.start; sequence_index < node->data.sequence.items.end; ++sequence_index, ++curve_index) {
+            ; // return -1;
+        for (yaml_node_item_t* sequence_index = node->data.sequence.items.start; sequence_index < node->data.sequence.items.top; ++sequence_index, ++curve_index) {
             yaml_node_t* sequence_element = yaml_document_get_node(document, *sequence_index);
             if (!hori_yaml_is_node(sequence_element, YAML_MAPPING_NODE, YAML_MAP_TAG))
                 return -1;
-            for (yaml_node_pair_t* map_key_value_index = sequence_element->data.mapping.pairs.start; map_key_value_index < sequence_element->data.mapping.pairs.end; ++map_key_value_index) {
+            for (yaml_node_pair_t* map_key_value_index = sequence_element->data.mapping.pairs.start; map_key_value_index < sequence_element->data.mapping.pairs.top; ++map_key_value_index) {
                 yaml_node_t* map_key = yaml_document_get_node(document, map_key_value_index->key);
-                yaml_node_t* map_value = yaml_document_get_node(document, map_key_value_index->key);
-                if (!hori_yaml_is_node(map_key, YAML_SCALAR_NODE, YAML_STR_TAG) || !hori_yaml_is_node(map_value, YAML_SCALAR_NODE, YAML_INT_TAG))
-                    return -1;
+                yaml_node_t* map_value = yaml_document_get_node(document, map_key_value_index->value);
+                int* pointer = NULL;
                 if (hori_yaml_compare_string(map_key->data.scalar.value, config_profile_button_curve_movement))
-                    curve[curve_index].movement = hori_yaml_int(map_value->data.scalar.value, map_value->data.scalar.length);
+                    pointer = &curve[curve_index].movement;
                 else if (hori_yaml_compare_string(map_key->data.scalar.value, config_profile_button_curve_response))
-                    curve[curve_index].response = hori_yaml_int(map_value->data.scalar.value, map_value->data.scalar.length);
+                    pointer = &curve[curve_index].response;
                 else
+                    return -1;
+                if (!hori_yaml_int(pointer, map_value->data.scalar.value, map_value->data.scalar.length))
                     return -1;
             }
         }
@@ -241,7 +234,7 @@ int hori_yaml_parse_profile_button(yaml_document_t* document, int index, hori_pr
         return -1;
     if (-1 == hori_yaml_parse_profile_button_mapping(document, data.mapping, profile, button, controller))
         return -1;
-    if (-1 == hori_yaml_parse_profile_button_curve(document, data.mapping, profile, button))
+    if (-1 == hori_yaml_parse_profile_button_curve(document, data.curve, profile, button))
         return -1;
     if (-1 == hori_yaml_parse_profile_button_inner_deadzone(document, data.inner_deadzone, profile, button))
         return -1;
@@ -258,13 +251,12 @@ int hori_yaml_parse_profile_buttons(yaml_document_t* document, int index, hori_p
         return -1;
     for (const yaml_node_pair_t* pair = node->data.mapping.pairs.start; pair < node->data.mapping.pairs.top; ++pair) {
         const yaml_node_t* key = yaml_document_get_node(document, pair->key);
-        const yaml_node_t* value = yaml_document_get_node(document, pair->value);
-        if (!hori_yaml_is_string_node(key) || !hori_yaml_is_map_node(value))
+        if (!hori_yaml_is_string_node(key))
             return -1;
         int button_value = hori_get_button_value(key->data.scalar.value, controller);
         if (button_value == -1)
             return -1;
-        if (hori_yaml_parse_profile_button(document, index, profile, controller, button_value) == -1)
+        if (hori_yaml_parse_profile_button(document, pair->value, profile, controller, button_value) == -1)
             return -1;
     }
     return 0;
@@ -312,9 +304,9 @@ int hori_yaml_parse_config(struct hori_yaml_config* config, yaml_document_t* doc
         return -1;
     const int id = hori_yaml_parse_profile_id(document, data.device);
     const int layout = hori_yaml_parse_profile_layout(document, data.layout);
-    if (!hori_yaml_parse_profile_name(document, data.name, config->profile))
+    if (!hori_yaml_parse_profile_name(document, data.name, profile))
         goto error_handling;
-    if (!hori_yaml_parse_profile_buttons(document, data.buttons, config->profile, layout))
+    if (!hori_yaml_parse_profile_buttons(document, data.buttons, profile, layout))
         goto error_handling;
 
     config->layout = layout;
@@ -408,7 +400,7 @@ int hori_yaml_emit_profile(yaml_emitter_t* emitter, const struct hori_yaml_confi
     // profile device
     // @todo profile->product is private implementation
     if (!hori_yaml_emit_map_scalar(emitter, NULL, YAML_INT_TAG, 1, 0, YAML_PLAIN_SCALAR_STYLE,
-        config_profile_device, strlen(config_profile_device), scalar, sizeof(scalar), "%d", hori_get_profile_product(config->profile)))
+        config_profile_device, strlen(config_profile_device), scalar, sizeof(scalar), "!!int %d", hori_get_profile_product(config->profile)))
         return 0;
 
     // profile name

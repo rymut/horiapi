@@ -13,10 +13,17 @@ int hori_yaml_boolean(const char* string, int string_length);
 
 /** @brief Convert yaml string to integer
 
+    @params[out] value The converted value (can be null)
+    @params[in] string The array of characters (must end with \0 character)
+    @params[in] string_length The length of array (without \0 character)
+
+    @summary
+        This function returns @p string converted to integer (plain integer, !!int <plain>) or 0 if conversion fails
+
     @returns
-        This function returns @p string converted to integer or 0 if conversion fails
+        This function returns 0 on failure
   */
-int hori_yaml_int(const char* string, int string_length);
+int hori_yaml_int(int *value, const char* string, int string_length);
 
 /** @brief Compare null terminated strings
 

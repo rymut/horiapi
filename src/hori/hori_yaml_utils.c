@@ -38,8 +38,20 @@ int hori_yaml_compare(const char* a, size_t a_size, yaml_char_t* b, size_t b_siz
     return strncmp(a, b, a_size) == 0;
 }
 
-int hori_yaml_int(const char* string, int string_length) {
+int hori_yaml_int(int *value, const char* string, int string_length) {
     if (!string || string_length <= 0)
         return 0;
-    return atoi(string);
+    const char prefix[]  = "!!int ";
+    if (strncmp(string, prefix, strlen(prefix)) == 0)
+        return hori_yaml_int(value, string + strlen(prefix), string_length - strlen(prefix));
+    char* endpoint = NULL;
+    long parsed = strtol(string, &endpoint, 10);
+    if (endpoint != string + string_length)
+        return 0;
+    if (parsed >= INT_MIN && parsed <= INT_MAX) {
+        if (value != NULL)
+            *value = (int)parsed;
+        return 1;
+    }
+    return 0;
 }
