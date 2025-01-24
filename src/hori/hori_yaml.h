@@ -8,7 +8,7 @@
 
 enum hori_yaml_button_naming {
     HID = 0,
-    CONFIG = 1, 
+    CONFIG = 1,
     PLAYSTATION = 2,
     XBOX = 3,
     SWITCH = 4
@@ -17,31 +17,46 @@ enum hori_yaml_button_naming {
 /** @brief Store config information
  */
 struct hori_yaml_config {
-    /** @brief config stored inside profile
-     */
+    /** @brief config stored inside profile */
     int layout;
     /** @brief Controller type */
     int product;
-    /** @brief Profile number
-     */
+    /** @brief Profile number */
     int profile_id;
     /** @brief Proflie to store */
-    hori_profile_t *profile;
+    hori_profile_t* profile;
 };
-/** @brief Store information about config
- */
+/** @brief Store information about config */
 struct hori_yaml_config_list {
+    /** @brief List value */
     struct hori_yaml_config config;
+    /** @brief Next element of the list */
     struct hori_yaml_config_list* next;
 };
 
-struct hori_yaml_config_list* hori_yaml_make_config_list(const hori_device_config_t *device_config, const hori_profile_t *profile);
+/** @brief Make deep copy of configuration list item
+
+    @param[in] device_config The device config that will describe configuration
+    @param[in] profile The profile that will be deep copied for use of yaml_config
+
+    @returns
+        This function returns NULL when profile cannot be duplicated, or required memory cannot be allocated
+ */
+struct hori_yaml_config_list* hori_yaml_make_config_list(const hori_device_config_t* device_config, const hori_profile_t* profile);
 
 void hori_yaml_free_config_list(struct hori_yaml_config_list* list);
 
-int hori_yaml_config_parse_file(struct hori_yaml_config_list** config, FILE* file, const hori_context_t *context);
-int hori_yaml_config_parse_string(struct hori_yaml_config_list** config, const uint8_t* data, size_t size, const hori_context_t *context);
-int hori_yaml_config_list_parse(struct hori_yaml_config_list** config, yaml_parser_t* parser, const hori_context_t *context);
+/** @brief Parse yaml configuration file
+
+    @param[in] file The file handle to process
+    @param[in] context The hori api context to use
+
+    @returns
+        This function returns 1 on success, 0 on false
+ */
+int hori_yaml_config_parse_file(struct hori_yaml_config_list** config, FILE* file, const hori_context_t* context);
+int hori_yaml_config_parse_string(struct hori_yaml_config_list** config, const uint8_t* data, size_t size, const hori_context_t* context);
+int hori_yaml_config_list_parse(struct hori_yaml_config_list** config, yaml_parser_t* parser, const hori_context_t* context);
 
 int hori_yaml_config_emit_file(const struct hori_yaml_config_list* config, FILE* file);
 int hori_yaml_config_emit_string(const struct hori_yaml_config_list* config, uint8_t* data, size_t size, size_t* writeSize);

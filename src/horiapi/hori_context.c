@@ -115,8 +115,9 @@ static const hori_context_t hori_default_context = {
     .retry_attempts = 10,
 };
 
+// @todo different implementation probably copy from hori_internal_context
 hori_context_t* hori_context() {
-    return NULL;
+    return hori_internal_context();
 }
 
 
