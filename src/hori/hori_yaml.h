@@ -49,14 +49,33 @@ void hori_yaml_free_config_list(struct hori_yaml_config_list* list);
 /** @brief Parse yaml configuration file
 
     @param[in] file The file handle to process
-    @param[in] context The hori api context to use
+    @param[in] context The hori api context (can be NULL)
 
     @returns
-        This function returns 1 on success, 0 on false
+        This function returns pointer to list containing parsed configuration, otherwise returns NULL
  */
-int hori_yaml_config_parse_file(struct hori_yaml_config_list** config, FILE* file, const hori_context_t* context);
-int hori_yaml_config_parse_string(struct hori_yaml_config_list** config, const uint8_t* data, size_t size, const hori_context_t* context);
-int hori_yaml_config_list_parse(struct hori_yaml_config_list** config, yaml_parser_t* parser, const hori_context_t* context);
+struct hori_yaml_config_list* hori_yaml_config_parse_file(FILE* file, const hori_context_t* context);
+
+/** @brief Parse yaml config string
+
+    @param[in] data
+    @param[in] size
+    @param[in] context The hori api context (can be NULL)
+
+    @returns
+        This function returns pointer to list containing parsed configuration, otherwise returns NULL
+ */
+struct hori_yaml_config_list* hori_yaml_config_parse_string(const uint8_t* data, size_t size, const hori_context_t* context);
+
+/** @brief Parse yaml config string
+
+    @param[in,out] parser The yaml parser
+    @param[in] context The hori api context (can be NULL)
+
+    @returns
+        This function returns pointer to list containing parsed configuration, otherwise returns NULL
+ */
+struct hori_yaml_config_list* hori_yaml_config_list_parse(yaml_parser_t* parser, const hori_context_t* context);
 
 int hori_yaml_config_emit_file(const struct hori_yaml_config_list* config, FILE* file);
 int hori_yaml_config_emit_string(const struct hori_yaml_config_list* config, uint8_t* data, size_t size, size_t* writeSize);

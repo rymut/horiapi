@@ -72,8 +72,7 @@ int hori_cli_command_get(int device_id, int profile_id, const char* output) {
 //    hori_yaml_config_emit_file(list, stdout);
     
     hori_yaml_free_config_list(list);
-    list = NULL;
-    hori_yaml_config_parse_string(&list, yaml_string, yaml_size, NULL);
+    list = hori_yaml_config_parse_string(yaml_string, yaml_size, NULL);
     free(yaml_string);
     yaml_string = NULL;
     hori_yaml_free_config_list(list);
